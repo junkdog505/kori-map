@@ -322,7 +322,7 @@ class TWF_Agencias_Public {
         // Filtrar por ciudad
         if (!empty($filters['city'])) {
             if (empty($args['tax_query'])) {
-                $args['tax_query'] = array();
+                $args['tax_query'] = array('relation' => 'AND');
             }
             
             $args['tax_query'][] = array(
@@ -335,7 +335,7 @@ class TWF_Agencias_Public {
         // Filtrar por distrito
         if (!empty($filters['district'])) {
             if (empty($args['tax_query'])) {
-                $args['tax_query'] = array();
+                $args['tax_query'] = array('relation' => 'AND');
             }
             
             $args['tax_query'][] = array(
@@ -351,7 +351,7 @@ class TWF_Agencias_Public {
         // Preparar los datos para la respuesta
         $agencies = array();
         $search_by_address = !empty($filters['search']);
-        $search_term_lower = strtolower($filters['search']);
+        $search_term_lower = !empty($filters['search']) ? strtolower($filters['search']) : '';
         
         if ($query->have_posts()) {
             while ($query->have_posts()) {
@@ -368,9 +368,11 @@ class TWF_Agencias_Public {
                 $email = get_post_meta($agency_id, '_twf_agencias_email', true);
                 $services = get_post_meta($agency_id, '_twf_agencias_services', true);
                 $schedule = get_post_meta($agency_id, '_twf_agencias_schedule', true);
+                $latitud = get_post_meta($agency_id, '_twf_agencias_latitud', true);
+                $longitud = get_post_meta($agency_id, '_twf_agencias_longitud', true);
                 
-                // Si estamos buscando por dirección también y no hay match en el título
-                if ($search_by_address && empty($args['s'])) {
+                // Si estamos buscando por dirección también y no hay coincidencia en el título
+                if ($search_by_address && empty($args['s']) && !empty($search_term_lower)) {
                     // Si la dirección no contiene el término de búsqueda, saltar esta agencia
                     if (strpos(strtolower($direccion), $search_term_lower) === false) {
                         continue;
@@ -398,10 +400,16 @@ class TWF_Agencias_Public {
                     'id'         => $agency_id,
                     'title'      => $agency_title,
                     'direccion'  => $direccion,
-                    'lat'        => '',
-                    'lng'        => '',
+                    'latitud'    => $latitud,
+                    'longitud'   => $longitud,
                     'icon'       => $custom_icon_url,
                     'infoWindow' => $tooltip_content,
+                    'meta_datos' => array(
+                        'latitud'  => $latitud,
+                        'longitud' => $longitud,
+                        'direccion' => $direccion,
+                        'custom_icon' => $custom_icon_url
+                    )
                 );
             }
             
@@ -413,124 +421,124 @@ class TWF_Agencias_Public {
     }
     
     /**
- * Genera el contenido HTML del tooltip
- */
-private function generate_tooltip_content($agency_id, $title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule) {
-    // Obtener configuración de campos a mostrar
-    $tooltip_fields = get_option('twf_agencias_tooltip_fields', array());
-    
-    // Valores por defecto
-    $default_fields = array(
-        'title'     => true,
-        'address'   => true,
-        'phone'     => true,
-        'mobile'    => true,
-        'email'     => false,
-        'schedule'  => true,
-        'services'  => true,
-    );
-    
-    // Combinar con valores predeterminados
-    $tooltip_fields = wp_parse_args($tooltip_fields, $default_fields);
-    
-    // Iniciar contenido
-    $content = '<div class="twf-agencias-tooltip">';
-    
-    // Título
-    if ($tooltip_fields['title'] && !empty($title)) {
-        $content .= '<h3 class="twf-agencias-tooltip-title">' . esc_html($title) . '</h3>';
-    }
-    
-    // Dirección
-    if ($tooltip_fields['address'] && !empty($direccion)) {
-        $content .= '<div class="twf-agencias-tooltip-address">' . esc_html($direccion) . '</div>';
-    }
-    
-    // Información de contacto
-    $has_contact = ($tooltip_fields['phone'] && !empty($telefono)) || 
-                  ($tooltip_fields['mobile'] && !empty($celular)) || 
-                  ($tooltip_fields['email'] && !empty($email));
-    
-    if ($has_contact) {
-        $content .= '<div class="twf-agencias-tooltip-contact">';
+     * Genera el contenido HTML del tooltip
+     */
+    private function generate_tooltip_content($agency_id, $title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule) {
+        // Obtener configuración de campos a mostrar
+        $tooltip_fields = get_option('twf_agencias_tooltip_fields', array());
         
-        // Teléfono
-        if ($tooltip_fields['phone'] && !empty($telefono)) {
-            $content .= '<div><strong>Teléfono:</strong> ' . esc_html($telefono);
+        // Valores por defecto
+        $default_fields = array(
+            'title'     => true,
+            'address'   => true,
+            'phone'     => true,
+            'mobile'    => true,
+            'email'     => false,
+            'schedule'  => true,
+            'services'  => true,
+        );
+        
+        // Combinar con valores predeterminados
+        $tooltip_fields = wp_parse_args($tooltip_fields, $default_fields);
+        
+        // Iniciar contenido
+        $content = '<div class="twf-agencias-tooltip">';
+        
+        // Título
+        if ($tooltip_fields['title'] && !empty($title)) {
+            $content .= '<h3 class="twf-agencias-tooltip-title">' . esc_html($title) . '</h3>';
+        }
+        
+        // Dirección
+        if ($tooltip_fields['address'] && !empty($direccion)) {
+            $content .= '<div class="twf-agencias-tooltip-address">' . esc_html($direccion) . '</div>';
+        }
+        
+        // Información de contacto
+        $has_contact = ($tooltip_fields['phone'] && !empty($telefono)) || 
+                    ($tooltip_fields['mobile'] && !empty($celular)) || 
+                    ($tooltip_fields['email'] && !empty($email));
+        
+        if ($has_contact) {
+            $content .= '<div class="twf-agencias-tooltip-contact">';
             
-            // Añadir anexo si existe
-            if (!empty($anexo)) {
-                $content .= ' Anexo: ' . esc_html($anexo);
+            // Teléfono
+            if ($tooltip_fields['phone'] && !empty($telefono)) {
+                $content .= '<div><strong>Teléfono:</strong> ' . esc_html($telefono);
+                
+                // Añadir anexo si existe
+                if (!empty($anexo)) {
+                    $content .= ' Anexo: ' . esc_html($anexo);
+                }
+                
+                $content .= '</div>';
+            }
+            
+            // Celular
+            if ($tooltip_fields['mobile'] && !empty($celular)) {
+                $content .= '<div><strong>Celular:</strong> ' . esc_html($celular) . '</div>';
+            }
+            
+            // Email
+            if ($tooltip_fields['email'] && !empty($email)) {
+                $content .= '<div><strong>Email:</strong> <a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></div>';
             }
             
             $content .= '</div>';
         }
         
-        // Celular
-        if ($tooltip_fields['mobile'] && !empty($celular)) {
-            $content .= '<div><strong>Celular:</strong> ' . esc_html($celular) . '</div>';
-        }
-        
-        // Email
-        if ($tooltip_fields['email'] && !empty($email)) {
-            $content .= '<div><strong>Email:</strong> <a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></div>';
-        }
-        
-        $content .= '</div>';
-    }
-    
-    // Horarios
-    if ($tooltip_fields['schedule'] && !empty($schedule) && is_array($schedule)) {
-        $content .= '<div class="twf-agencias-tooltip-schedule">';
-        $content .= '<strong>Horarios:</strong>';
-        $content .= '<ul>';
-        
-        $days_map = array(
-            'monday'    => 'Lunes',
-            'tuesday'   => 'Martes',
-            'wednesday' => 'Miércoles',
-            'thursday'  => 'Jueves',
-            'friday'    => 'Viernes',
-            'saturday'  => 'Sábado',
-            'sunday'    => 'Domingo',
-        );
-        
-        foreach ($schedule as $day_id => $day_data) {
-            if (isset($day_data['active']) && $day_data['active']) {
-                $day_name = isset($days_map[$day_id]) ? $days_map[$day_id] : ucfirst($day_id);
-                $open = isset($day_data['open']) ? $day_data['open'] : '09:00';
-                $close = isset($day_data['close']) ? $day_data['close'] : '18:00';
-                
-                $content .= '<li>' . esc_html($day_name) . ': ' . esc_html($open) . ' - ' . esc_html($close) . '</li>';
+        // Horarios
+        if ($tooltip_fields['schedule'] && !empty($schedule) && is_array($schedule)) {
+            $content .= '<div class="twf-agencias-tooltip-schedule">';
+            $content .= '<strong>Horarios:</strong>';
+            $content .= '<ul>';
+            
+            $days_map = array(
+                'monday'    => 'Lunes',
+                'tuesday'   => 'Martes',
+                'wednesday' => 'Miércoles',
+                'thursday'  => 'Jueves',
+                'friday'    => 'Viernes',
+                'saturday'  => 'Sábado',
+                'sunday'    => 'Domingo',
+            );
+            
+            foreach ($schedule as $day_id => $day_data) {
+                if (isset($day_data['active']) && $day_data['active']) {
+                    $day_name = isset($days_map[$day_id]) ? $days_map[$day_id] : ucfirst($day_id);
+                    $open = isset($day_data['open']) ? $day_data['open'] : '09:00';
+                    $close = isset($day_data['close']) ? $day_data['close'] : '18:00';
+                    
+                    $content .= '<li>' . esc_html($day_name) . ': ' . esc_html($open) . ' - ' . esc_html($close) . '</li>';
+                }
             }
+            
+            $content .= '</ul>';
+            $content .= '</div>';
         }
         
-        $content .= '</ul>';
-        $content .= '</div>';
-    }
-    
-    // Servicios
-    if ($tooltip_fields['services'] && !empty($services) && is_array($services)) {
-        $content .= '<div class="twf-agencias-tooltip-services">';
-        $content .= '<strong>Servicios:</strong>';
-        $content .= '<ul>';
-        
-        // Obtener todos los servicios disponibles desde la configuración
-        $all_services = get_option('twf_agencias_services', array());
-        
-        foreach ($services as $service_id) {
-            if (isset($all_services[$service_id]['label'])) {
-                $service_name = $all_services[$service_id]['label'];
-                $content .= '<li>' . esc_html($service_name) . '</li>';
+        // Servicios
+        if ($tooltip_fields['services'] && !empty($services) && is_array($services)) {
+            $content .= '<div class="twf-agencias-tooltip-services">';
+            $content .= '<strong>Servicios:</strong>';
+            $content .= '<ul>';
+            
+            // Obtener todos los servicios disponibles desde la configuración
+            $all_services = get_option('twf_agencias_services', array());
+            
+            foreach ($services as $service_id) {
+                if (isset($all_services[$service_id]['label'])) {
+                    $service_name = $all_services[$service_id]['label'];
+                    $content .= '<li>' . esc_html($service_name) . '</li>';
+                }
             }
+            
+            $content .= '</ul>';
+            $content .= '</div>';
         }
         
-        $content .= '</ul>';
         $content .= '</div>';
+        
+        return $content;
     }
-    
-    $content .= '</div>';
-    
-    return $content;
-}
 }

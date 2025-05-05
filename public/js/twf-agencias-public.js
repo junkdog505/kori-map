@@ -4,6 +4,7 @@
     // Variables globales
     var map, markers = [], infoWindow, geocoder, autocomplete;
     var agencies = []; // Guardar todas las agencias
+    var notification = null; // Para mensajes de notificación
     
     $(document).ready(function() {
         // Inicializar solo si existe el contenedor del mapa
@@ -17,8 +18,46 @@
             
             // Inicializar eventos
             initEvents();
+            
+            // Crear contenedor de notificación
+            createNotification();
         }
     });
+    
+    /**
+     * Crea el contenedor de notificación
+     */
+    function createNotification() {
+        notification = $('<div class="twf-agencias-notification"></div>');
+        notification.css({
+            'position': 'fixed',
+            'top': '20px',
+            'left': '50%',
+            'transform': 'translateX(-50%)',
+            'background-color': 'rgba(0, 0, 0, 0.7)',
+            'color': 'white',
+            'padding': '10px 20px',
+            'border-radius': '4px',
+            'z-index': '9999',
+            'display': 'none',
+            'font-size': '14px'
+        });
+        $('body').append(notification);
+    }
+    
+    /**
+     * Muestra una notificación temporal
+     */
+    function showNotification(message, duration) {
+        if (!notification) return;
+        
+        notification.text(message);
+        notification.fadeIn(300);
+        
+        setTimeout(function() {
+            notification.fadeOut(300);
+        }, duration || 3000);
+    }
     
     /**
      * Carga el script de Google Maps
@@ -219,18 +258,14 @@
                 filters: filters
             },
             success: function(response) {
-                console.log("Respuesta recibida:", response);
                 if (response.success && response.data) {
                     // Guardar todas las agencias para usar en autocompletado
                     agencies = response.data;
                     displayAgencies(response.data);
-                } else {
-                    console.error("Error en la respuesta:", response);
                 }
             },
             error: function(xhr, status, error) {
-                console.error("Error AJAX:", status, error);
-                alert('Error al cargar las agencias. Por favor, intenta nuevamente.');
+                showNotification('Error al cargar las agencias. Por favor, intenta nuevamente.', 3000);
             }
         });
     }
@@ -239,25 +274,22 @@
      * Muestra las agencias en el mapa
      */
     function displayAgencies(agencies) {
-        console.log("Mostrando agencias:", agencies);
-        
         // Limpiar marcadores existentes
         clearMarkers();
         
         // Si no hay agencias, mostrar mensaje
         if (!agencies || agencies.length === 0) {
-            $('#twf-agencias-results').html('<p>No se encontraron agencias con los filtros seleccionados.</p>');
+            showNotification('No se encontraron agencias con los filtros seleccionados.', 3000);
             return;
         }
         
         // Obtener los límites del mapa para centrar
         var bounds = new google.maps.LatLngBounds();
         var pendingGeocode = 0;
+        var markersCreated = 0;
         
         // Crear marcadores para cada agencia
         $.each(agencies, function(index, agency) {
-            console.log("Procesando agencia:", agency);
-            
             // Obtener latitud y longitud
             var lat, lng;
             
@@ -269,11 +301,10 @@
                 lng = parseFloat(agency.longitud);
             }
             
-            console.log("Coordenadas:", lat, lng);
-            
             // Si tenemos coordenadas válidas, crear marcador
             if (!isNaN(lat) && !isNaN(lng)) {
                 createMarker(agency, lat, lng, bounds);
+                markersCreated++;
             } 
             // Si no tenemos coordenadas, intentar geocodificar la dirección
             else if (agency.direccion) {
@@ -284,13 +315,12 @@
                     if (status === google.maps.GeocoderStatus.OK) {
                         var position = results[0].geometry.location;
                         createMarker(agency, position.lat(), position.lng(), bounds);
+                        markersCreated++;
                         
                         // Si no quedan geocodificaciones pendientes, ajustar el mapa
                         if (pendingGeocode === 0 && markers.length > 0) {
                             map.fitBounds(bounds);
                         }
-                    } else {
-                        console.error("Error geocodificando:", status);
                     }
                 });
             } else if (agency.meta_datos && agency.meta_datos.direccion) {
@@ -301,25 +331,22 @@
                     if (status === google.maps.GeocoderStatus.OK) {
                         var position = results[0].geometry.location;
                         createMarker(agency, position.lat(), position.lng(), bounds);
+                        markersCreated++;
                         
                         // Si no quedan geocodificaciones pendientes, ajustar el mapa
                         if (pendingGeocode === 0 && markers.length > 0) {
                             map.fitBounds(bounds);
                         }
-                    } else {
-                        console.error("Error geocodificando:", status);
                     }
                 });
-            } else {
-                console.warn("No hay coordenadas ni dirección para geolocalizar:", agency.title);
             }
         });
         
         // Si no hay geocodificaciones pendientes y hay marcadores, ajustar el mapa
         if (pendingGeocode === 0 && markers.length > 0) {
             map.fitBounds(bounds);
-        } else if (markers.length === 0 && pendingGeocode === 0) {
-            $('#twf-agencias-results').html('<p>No se pudieron ubicar las agencias en el mapa. Por favor, añade coordenadas o direcciones.</p>');
+        } else if (markersCreated === 0 && pendingGeocode === 0) {
+            showNotification('No se pudieron ubicar las agencias en el mapa. Verifica las coordenadas.', 3000);
         }
     }
     
@@ -515,11 +542,15 @@
             },
             success: function(response) {
                 if (response.success) {
-                    displayAgencies(response.data);
+                    if (response.data && response.data.length > 0) {
+                        displayAgencies(response.data);
+                    } else {
+                        showNotification('No se encontraron agencias en esta ciudad.', 3000);
+                    }
                 }
             },
             error: function() {
-                alert('Error al filtrar agencias. Por favor, intenta nuevamente.');
+                showNotification('Error al filtrar agencias.', 3000);
             }
         });
     }
@@ -544,11 +575,15 @@
             },
             success: function(response) {
                 if (response.success) {
-                    displayAgencies(response.data);
+                    if (response.data && response.data.length > 0) {
+                        displayAgencies(response.data);
+                    } else {
+                        showNotification('No se encontraron agencias en este distrito.', 3000);
+                    }
                 }
             },
             error: function() {
-                alert('Error al filtrar agencias. Por favor, intenta nuevamente.');
+                showNotification('Error al filtrar agencias.', 3000);
             }
         });
     }
@@ -582,11 +617,15 @@
             },
             success: function(response) {
                 if (response.success) {
-                    displayAgencies(response.data);
+                    if (response.data && response.data.length > 0) {
+                        displayAgencies(response.data);
+                    } else {
+                        showNotification('No se encontraron agencias que coincidan con la búsqueda.', 3000);
+                    }
                 }
             },
             error: function() {
-                alert('Error al buscar agencias. Por favor, intenta nuevamente.');
+                showNotification('Error al buscar agencias.', 3000);
             }
         });
     }
