@@ -73,8 +73,8 @@ class TWF_Agencias_Public {
      */
     public function register_shortcodes() {
         add_shortcode('twf_agencias_map', array($this, 'render_map_shortcode'));
+        add_shortcode('twf_agencias_filters', array($this, 'render_filters_shortcode'));
     }
-
     /**
      * Renderiza el shortcode del mapa
      */
@@ -86,10 +86,36 @@ class TWF_Agencias_Public {
                 'zoom'           => '12',
                 'ubicacion'      => '',
                 'servicios'      => '',
-                'mostrar_filtros' => 'true',
             ),
             $atts,
             'twf_agencias_map'
+        );
+        
+        // Cargar los scripts necesarios
+        $this->enqueue_styles();
+        $this->enqueue_scripts();
+        
+        // Iniciar el buffer de salida
+        ob_start();
+        
+        // Incluir la vista del mapa
+        include TWF_AGENCIAS_PLUGIN_DIR . 'public/partials/twf-agencias-map-display.php';
+        
+        return ob_get_clean();
+    }
+
+    /**
+     * Renderiza el shortcode de los filtros
+     */
+    public function render_filters_shortcode($atts) {
+        // Extraer atributos del shortcode
+        $atts = shortcode_atts(
+            array(
+                'ubicacion'      => '',
+                'servicios'      => '',
+            ),
+            $atts,
+            'twf_agencias_filters'
         );
         
         // Obtener las etiquetas configuradas
@@ -112,9 +138,6 @@ class TWF_Agencias_Public {
         // Obtener el ícono del botón de búsqueda
         $search_button_icon = get_option('twf_agencias_search_button_icon', '');
         
-        // Comprobar si mostrar filtros
-        $mostrar_filtros = filter_var($atts['mostrar_filtros'], FILTER_VALIDATE_BOOLEAN);
-        
         // Obtener todas las ubicaciones (términos de taxonomía)
         $terms = get_terms(array(
             'taxonomy'   => 'ubicacion',
@@ -129,8 +152,8 @@ class TWF_Agencias_Public {
         // Iniciar el buffer de salida
         ob_start();
         
-        // Incluir la vista del mapa
-        include TWF_AGENCIAS_PLUGIN_DIR . 'public/partials/twf-agencias-public-display.php';
+        // Incluir la vista de los filtros
+        include TWF_AGENCIAS_PLUGIN_DIR . 'public/partials/twf-agencias-filters-display.php';
         
         return ob_get_clean();
     }

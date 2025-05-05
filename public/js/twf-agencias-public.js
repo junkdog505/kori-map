@@ -8,7 +8,8 @@
     
     $(document).ready(function() {
         // Inicializar solo si existe el contenedor del mapa
-        if ($('#twf-agencias-map').length) {
+        if ($('#twf-agencias-map').length || $('.twf-agencias-filters-container').length) {
+
             // Cargar el script de Google Maps si hay API key
             if (twf_agencias_vars.api_key) {
                 loadGoogleMapsScript();
@@ -359,13 +360,6 @@
         // Obtener título
         var title = agency.title ? (agency.title.rendered || agency.title) : "Agencia";
         
-        // Opciones del marcador
-        var markerOptions = {
-            position: position,
-            map: map,
-            title: title
-        };
-        
         // Si hay icono personalizado, usarlo
         var iconUrl = '';
         if (agency.meta_datos && agency.meta_datos.custom_icon) {
@@ -375,23 +369,80 @@
         }
         
         if (iconUrl) {
-            markerOptions.icon = {
-                url: iconUrl,
-                scaledSize: new google.maps.Size(40, 40)
+            // Crear un marcador temporal con icono predeterminado
+            var tempMarker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: title
+            });
+            
+            // Cargar la imagen para obtener sus dimensiones originales
+            var img = new Image();
+            img.onload = function() {
+                // Calcular nueva escala manteniendo la relación de aspecto
+                var origWidth = this.width;
+                var origHeight = this.height;
+                var scaleFactor = 30 / Math.max(origWidth, origHeight); // Usar tamaño más pequeño (30px)
+                
+                // Eliminar marcador temporal del mapa
+                tempMarker.setMap(null);
+                
+                // Eliminar del array si existe
+                var tempIndex = markers.indexOf(tempMarker);
+                if (tempIndex > -1) {
+                    markers.splice(tempIndex, 1);
+                }
+                
+                // Crear el marcador definitivo con el icono redimensionado
+                var newMarker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: title,
+                    icon: {
+                        url: iconUrl,
+                        scaledSize: new google.maps.Size(
+                            Math.round(origWidth * scaleFactor), 
+                            Math.round(origHeight * scaleFactor)
+                        )
+                    }
+                });
+                
+                // Añadir evento de clic al marcador
+                newMarker.addListener('click', function() {
+                    infoWindow.setContent(agency.infoWindow);
+                    infoWindow.open(map, newMarker);
+                });
+                
+                // Añadir el marcador definitivo al array
+                markers.push(newMarker);
             };
+            img.src = iconUrl;
+            
+            // Añadir evento de clic al marcador temporal
+            tempMarker.addListener('click', function() {
+                infoWindow.setContent(agency.infoWindow);
+                infoWindow.open(map, tempMarker);
+            });
+            
+            // Añadir el marcador temporal al array
+            markers.push(tempMarker);
+        } else {
+            // Crear el marcador sin icono personalizado
+            var marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: title
+            });
+            
+            // Añadir evento de clic al marcador
+            marker.addListener('click', function() {
+                infoWindow.setContent(agency.infoWindow);
+                infoWindow.open(map, marker);
+            });
+            
+            // Añadir el marcador al array
+            markers.push(marker);
         }
-        
-        // Crear el marcador
-        var marker = new google.maps.Marker(markerOptions);
-        
-        // Añadir evento de clic al marcador
-        marker.addListener('click', function() {
-            infoWindow.setContent(agency.infoWindow);
-            infoWindow.open(map, marker);
-        });
-        
-        // Añadir el marcador al array
-        markers.push(marker);
         
         // Extender los límites
         bounds.extend(position);

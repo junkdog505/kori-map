@@ -3,11 +3,10 @@
  */
 
  .twf-agencias-map-container {
-    margin-bottom: 30px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    background-color: #f8f9fa;
-    padding: 25px;
-    border-radius: 8px;
+    margin-bottom: 0;
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
 }
 
 /* Filtros */
@@ -121,14 +120,13 @@
     outline: none;
 }
 
-/* Mapa */
 .twf-agencias-map {
     width: 100%;
-    height: 400px;
-    border-radius: 4px;
+    height: 100%;
+    border-radius: 0;
     overflow: hidden;
-    border: 1px solid #ced4da;
-    margin-top: 20px;
+    border: none;
+    margin: 0;
 }
 
 /* Quitar outline a los controles de Google Maps */
@@ -198,49 +196,57 @@
     margin-bottom: 10px;
     font-size: 16px;
     font-weight: 700; /* Bold */
-    color: #0d6efd;
+    color: #1F4965;
     border-bottom: 1px solid #00C9DB; /* Color línea separadora */
     padding-bottom: 5px;
 }
 
 .twf-agencias-tooltip-address {
     margin-bottom: 12px; /* Margen 12px */
+    color: #848483;
     font-style: italic;
 }
 
 .twf-agencias-tooltip-contact {
     margin-bottom: 4px; /* Margen 4px */
+    color: #848483;
 }
 
 .twf-agencias-tooltip-contact strong {
     font-weight: 700; /* Bold */
+    color: #848483;
 }
 
 .twf-agencias-tooltip-schedule {
     margin-top: 4px; /* Margen 4px */
     margin-bottom: 4px;
+    color: #848483;
 }
 
 .twf-agencias-tooltip-schedule strong {
     display: block;
     margin-bottom: 4px;
     font-weight: 700; /* Bold */
+    color: #848483;
 }
 
 .twf-agencias-tooltip-services {
     margin-top: 4px; /* Margen 4px */
+    color: #848483;
 }
 
 .twf-agencias-tooltip-services strong {
     display: block;
     margin-bottom: 4px;
     font-weight: 700; /* Bold */
+    color: #848483;
 }
 
 .twf-agencias-tooltip-services ul {
     margin: 0;
     padding-left: 20px;
     margin-bottom: 4px;
+    color: #848483;
 }
 
 /* Responsive */
