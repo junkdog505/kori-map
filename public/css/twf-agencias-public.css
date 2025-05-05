@@ -310,3 +310,43 @@
     background-color: #0b5ed7;
     color: #fff;
 }
+
+/* Estilos para las sugerencias de búsqueda */
+.twf-agencias-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ced4da;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.twf-agencias-suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.twf-agencias-suggestion-item:hover {
+    background-color: #f0f0f0;
+}
+
+/* Más espacio para el campo de búsqueda */
+.twf-agencias-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 25px; /* Espacio para las sugerencias */
+}
+
+/* Estilo para agencia activa */
+.twf-agencias-marker-active {
+    z-index: 999 !important;
+}
