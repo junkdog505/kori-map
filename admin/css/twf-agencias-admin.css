@@ -1,0 +1,607 @@
+/**
+ * Estilos para la administración del plugin
+ */
+
+/* Estilos generales */
+.twf-agencias-admin {
+    max-width: 1200px;
+}
+
+.twf-agencias-tab-content {
+    margin-top: 20px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Estilos para la vista previa de íconos */
+.twf-agencias-icon-preview,
+.twf-agencias-search-icon-preview {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.twf-agencias-icon-preview img,
+.twf-agencias-search-icon-preview img {
+    max-width: 40px;
+    max-height: 40px;
+    display: block;
+    margin: 0 auto;
+}
+
+.twf-agencias-search-icon-preview .icon-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.twf-agencias-search-icon-preview svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+.twf-agencias-custom-icon-container {
+    margin-bottom: 20px;
+    padding: 0;
+}
+
+.twf-agencias-icon-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.twf-agencias-remove-icon,
+.twf-agencias-remove-search-icon {
+    margin-top: 5px;
+}
+
+/* Estilos para la gestión de servicios */
+.twf-agencias-service-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.twf-agencias-service-label {
+    flex: 1;
+    margin-right: 15px;
+}
+
+/* Estilos mejorados para los servicios en el CPT */
+.twf-agencias-services-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.twf-agencias-service-item {
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.twf-agencias-service-item:hover {
+    background-color: #f5f5f5;
+}
+
+.twf-agencias-service-item.active {
+    background-color: #e7f0f7;
+    border-color: #2271b1;
+}
+
+.service-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    width: 100%;
+}
+
+.twf-service-checkbox {
+    margin-right: 8px !important;
+    display: inline-block !important;
+    opacity: 1 !important;
+    position: relative !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.twf-service-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.twf-agencias-add-service {
+    margin-bottom: 20px;
+}
+
+.twf-agencias-services-empty {
+    padding: 15px;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.twf-agencias-services-empty p {
+    margin-bottom: 15px;
+}
+
+/* Estilos para los metaboxes del CPT */
+.post-type-agencia #poststuff .postbox {
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.post-type-agencia #poststuff .postbox .handlediv {
+    height: 30px;
+}
+
+.post-type-agencia #poststuff h2.hndle {
+    padding: 12px 15px;
+    font-size: 14px;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+.post-type-agencia #poststuff .inside {
+    padding: 15px;
+    margin: 0;
+}
+
+/* Metabox de Información de Contacto */
+.twf-agencias-contact-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.twf-agencias-contact-row {
+    display: flex;
+    gap: 15px;
+}
+
+.twf-agencias-contact-column {
+    flex: 1;
+}
+
+.twf-agencias-contact-full {
+    width: 100%;
+}
+
+.twf-agencias-contact-grid label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #333;
+}
+
+.twf-agencias-contact-grid input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s;
+}
+
+.twf-agencias-contact-grid input:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+/* Estilos para el metabox de horarios */
+.twf-agencias-schedule-container {
+    margin-top: 10px;
+}
+
+.twf-agencias-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e0e0e0;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.twf-agencias-schedule-table th,
+.twf-agencias-schedule-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e5;
+    vertical-align: middle;
+}
+
+.twf-schedule-header th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    color: #333;
+}
+
+.twf-center {
+    text-align: center;
+}
+
+.twf-day-name {
+    font-weight: 500;
+    width: 120px;
+}
+
+.twf-agencias-schedule-time {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+}
+
+/* Interruptor de estilo toggle para la activación del día */
+.twf-schedule-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+}
+
+.twf-schedule-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.twf-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.twf-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .twf-toggle-slider {
+    background-color: #2271b1;
+}
+
+input:checked + .twf-toggle-slider:before {
+    transform: translateX(22px);
+}
+
+.twf-day-active {
+    background-color: #f9f9f9;
+}
+
+.twf-day-inactive {
+    background-color: #f1f1f1;
+    color: #777;
+}
+
+/* Estilos para la pestaña de CSS */
+.twf-agencias-css-classes {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+.twf-agencias-css-classes ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.twf-agencias-css-classes li {
+    margin-bottom: 8px;
+}
+
+.twf-agencias-css-classes code {
+    background-color: #fff;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+}
+
+.twf-agencias-css-example {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.twf-agencias-css-example pre {
+    white-space: pre-wrap;
+    margin: 0;
+    font-family: monospace;
+    background-color: #fff;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    overflow: auto;
+}
+
+/* Estilos para la pestaña de Shortcode */
+.twf-agencias-shortcode-container {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #e0e0e0;
+}
+
+.twf-agencias-shortcode-container code {
+    display: inline-block;
+    padding: 10px 15px;
+    margin-right: 15px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    flex-grow: 1;
+    border-radius: 3px;
+}
+
+.twf-agencias-shortcode-instructions {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.twf-agencias-shortcode-instructions h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.twf-agencias-shortcode-instructions ol {
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+.twf-agencias-shortcode-instructions ol li {
+    margin-bottom: 8px;
+}
+
+.twf-agencias-shortcode-instructions table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.twf-agencias-shortcode-instructions table th,
+.twf-agencias-shortcode-instructions table td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.twf-agencias-shortcode-instructions table th {
+    background-color: #f2f2f2;
+    font-weight: 600;
+}
+
+.twf-agencias-shortcode-instructions table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.twf-agencias-shortcode-instructions table code {
+    background-color: #fff;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+}
+
+/* Botones más atractivos */
+.twf-agencias-form .button,
+.twf-agencias-services-form .button,
+.twf-agencias-upload-icon,
+.twf-agencias-remove-icon,
+.twf-agencias-upload-search-icon,
+.twf-agencias-remove-search-icon,
+.twf-agencias-add-service,
+.twf-agencias-remove-service,
+.twf-agencias-copy-shortcode {
+    padding: 8px 15px;
+    height: auto;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.twf-agencias-form .button:hover,
+.twf-agencias-services-form .button:hover,
+.twf-agencias-upload-icon:hover,
+.twf-agencias-remove-icon:hover,
+.twf-agencias-upload-search-icon:hover,
+.twf-agencias-remove-search-icon:hover,
+.twf-agencias-add-service:hover,
+.twf-agencias-remove-service:hover,
+.twf-agencias-copy-shortcode:hover {
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.twf-agencias-upload-icon,
+.twf-agencias-upload-search-icon,
+.twf-agencias-add-service,
+.twf-agencias-copy-shortcode {
+    background-color: #2271b1;
+    color: white;
+    border-color: #135e96;
+}
+
+.twf-agencias-upload-icon:hover,
+.twf-agencias-upload-search-icon:hover,
+.twf-agencias-add-service:hover,
+.twf-agencias-copy-shortcode:hover {
+    background-color: #135e96;
+    color: white;
+    border-color: #0a4b78;
+}
+
+.twf-agencias-remove-icon,
+.twf-agencias-remove-search-icon,
+.twf-agencias-remove-service {
+    background-color: #f1f1f1;
+    color: #333;
+    border-color: #ccc;
+}
+
+.twf-agencias-remove-icon:hover,
+.twf-agencias-remove-search-icon:hover,
+.twf-agencias-remove-service:hover {
+    background-color: #e9e9e9;
+    color: #d63638;
+    border-color: #d63638;
+}
+
+/* Mejoras generales para formularios */
+.twf-agencias-form .form-table th {
+    width: 200px;
+    padding: 20px 10px 20px 0;
+    vertical-align: top;
+}
+
+.twf-agencias-form .form-table td {
+    padding: 15px 10px;
+    vertical-align: middle;
+}
+
+.twf-agencias-form input[type="text"],
+.twf-agencias-form input[type="email"],
+.twf-agencias-form input[type="number"],
+.twf-agencias-form select,
+.twf-agencias-form textarea,
+.twf-agencias-service-label {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 400px;
+}
+
+.twf-agencias-form input[type="text"]:focus,
+.twf-agencias-form input[type="email"]:focus,
+.twf-agencias-form input[type="number"]:focus,
+.twf-agencias-form select:focus,
+.twf-agencias-form textarea:focus,
+.twf-agencias-service-label:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+.twf-agencias-form h3 {
+    padding: 10px 0;
+    margin: 20px 0 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 1.3em;
+    color: #2271b1;
+}
+
+.twf-agencias-form .description {
+    font-style: italic;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Icono personalizado en CPT */
+.post-type-agencia #twf_agencias_custom_icon .twf-agencias-custom-icon-preview {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.post-type-agencia #twf_agencias_custom_icon .twf-agencias-custom-icon-preview img {
+    max-width: 40px;
+    max-height: 40px;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .twf-agencias-form .form-table th {
+        width: 100%;
+        display: block;
+        padding: 10px 0 5px;
+    }
+    
+    .twf-agencias-form .form-table td {
+        width: 100%;
+        display: block;
+        padding: 5px 0 10px;
+    }
+    
+    .twf-agencias-contact-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .twf-agencias-service-item {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .twf-agencias-shortcode-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .twf-agencias-shortcode-container code {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .twf-agencias-schedule-table th,
+    .twf-agencias-schedule-table td {
+        padding: 8px 5px;
+    }
+}
