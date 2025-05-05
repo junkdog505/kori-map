@@ -544,17 +544,33 @@
                 if (response.success) {
                     if (response.data && response.data.length > 0) {
                         displayAgencies(response.data);
+                        
+                        // Añadir un pequeño padding al bounds para mejorar visualización
+                        if (map && markers.length > 0) {
+                            setTimeout(function() {
+                                var bounds = new google.maps.LatLngBounds();
+                                for (var i = 0; i < markers.length; i++) {
+                                    bounds.extend(markers[i].getPosition());
+                                }
+                                
+                                map.fitBounds(bounds);
+                                
+                                // Si solo hay un marcador o están muy juntos, 
+                                // ajusta el zoom para ver mejor el contexto
+                                var listener = google.maps.event.addListenerOnce(map, 'bounds_changed', function() {
+                                    if (map.getZoom() > 16) {
+                                        map.setZoom(16);
+                                    } else if (map.getZoom() < 11) {
+                                        map.setZoom(11);  // Mínimo zoom para ciudades
+                                    }
+                                });
+                            }, 100);
+                        }
                     } else {
                         showNotification('No se encontraron agencias en esta ciudad.', 3000);
                     }
                 }
-                if (map && markers.length > 0) {
-                    setTimeout(function() {
-                        map.setZoom(12);
-                    }, 100);
-                }
             },
-            
             error: function() {
                 showNotification('Error al filtrar agencias.', 3000);
             }
@@ -583,14 +599,31 @@
                 if (response.success) {
                     if (response.data && response.data.length > 0) {
                         displayAgencies(response.data);
+                        
+                        // Ajustar el mapa para mostrar todos los pines
+                        if (map && markers.length > 0) {
+                            setTimeout(function() {
+                                var bounds = new google.maps.LatLngBounds();
+                                for (var i = 0; i < markers.length; i++) {
+                                    bounds.extend(markers[i].getPosition());
+                                }
+                                
+                                map.fitBounds(bounds);
+                                
+                                // Si solo hay un marcador o están muy juntos,
+                                // ajusta el zoom para ver mejor el contexto
+                                var listener = google.maps.event.addListenerOnce(map, 'bounds_changed', function() {
+                                    if (map.getZoom() > 16) {
+                                        map.setZoom(16);
+                                    } else if (map.getZoom() < 13) {
+                                        map.setZoom(13);  // Mínimo zoom para distritos
+                                    }
+                                });
+                            }, 100);
+                        }
                     } else {
                         showNotification('No se encontraron agencias en este distrito.', 3000);
                     }
-                }
-                if (map && markers.length > 0) {
-                    setTimeout(function() {
-                        map.setZoom(14);
-                    }, 100);
                 }
             },
             error: function() {
