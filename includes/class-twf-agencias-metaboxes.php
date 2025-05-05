@@ -43,16 +43,6 @@ class TWF_Agencias_Metaboxes {
             'default'
         );
         
-        // Metabox para icono personalizado
-        add_meta_box(
-            'twf_agencias_custom_icon',
-            'Icono personalizado',
-            array($this, 'render_custom_icon_metabox'),
-            'agencia',
-            'side',
-            'default'
-        );
-        
         // Metabox para horarios
         add_meta_box(
             'twf_agencias_schedule',
@@ -187,9 +177,20 @@ class TWF_Agencias_Metaboxes {
                         updateMarkerPosition(marker.getPosition());
                     });
                     
-                    // Si tenemos coordenadas guardadas, mostrar el marcador
+                    // Si tenemos coordenadas guardadas, mostrar el marcador y obtener dirección
                     if (latInput.val() && lngInput.val()) {
                         marker.setVisible(true);
+                        
+                        // Geocodificar inverso para mostrar la dirección
+                        var geocoder = new google.maps.Geocoder();
+                        var latLng = new google.maps.LatLng(defaultLat, defaultLng);
+                        
+                        geocoder.geocode({'location': latLng}, function(results, status) {
+                            if (status === 'OK' && results[0]) {
+                                addressInput.val(results[0].formatted_address);
+                                searchInput.val(results[0].formatted_address);
+                            }
+                        });
                     }
                     
                     // Si tenemos dirección pero no coordenadas, geocodificar

@@ -93,7 +93,7 @@
         // Opciones del mapa
         var mapOptions = {
             center: { lat: -16.3988667, lng: -71.5369607 }, // Arequipa, Perú por defecto
-            zoom: defaultZoom,
+            zoom: 6,
             mapTypeControl: true,
             fullscreenControl: true,
             streetViewControl: false,
@@ -548,7 +548,13 @@
                         showNotification('No se encontraron agencias en esta ciudad.', 3000);
                     }
                 }
+                if (map && markers.length > 0) {
+                    setTimeout(function() {
+                        map.setZoom(12);
+                    }, 100);
+                }
             },
+            
             error: function() {
                 showNotification('Error al filtrar agencias.', 3000);
             }
@@ -580,6 +586,11 @@
                     } else {
                         showNotification('No se encontraron agencias en este distrito.', 3000);
                     }
+                }
+                if (map && markers.length > 0) {
+                    setTimeout(function() {
+                        map.setZoom(14);
+                    }, 100);
                 }
             },
             error: function() {
