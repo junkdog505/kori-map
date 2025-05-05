@@ -76,7 +76,6 @@ class TWF_Agencias_Metaboxes {
         $telefono = get_post_meta($post->ID, '_twf_agencias_telefono', true);
         $anexo = get_post_meta($post->ID, '_twf_agencias_anexo', true);
         $email = get_post_meta($post->ID, '_twf_agencias_email', true);
-        $direccion = get_post_meta($post->ID, '_twf_agencias_direccion', true);
         $latitud = get_post_meta($post->ID, '_twf_agencias_latitud', true);
         $longitud = get_post_meta($post->ID, '_twf_agencias_longitud', true);
         
@@ -111,19 +110,11 @@ class TWF_Agencias_Metaboxes {
                         value="<?php echo esc_attr($email); ?>" class="widefat">
                 </div>
             </div>
-            
-            <div class="twf-agencias-contact-row">
-                <div class="twf-agencias-contact-full">
-                    <label for="twf_agencias_direccion">Dirección:</label>
-                    <input type="text" id="twf_agencias_direccion" name="twf_agencias_direccion" 
-                        value="<?php echo esc_attr($direccion); ?>" class="widefat">
-                </div>
-            </div>
         </div>
         
         <div class="twf-agencias-location-fields" style="margin-top: 15px;">
             <h3 style="margin-top: 0;">Ubicación en el Mapa</h3>
-            <p class="description">Busca una dirección o haz clic en el mapa para seleccionar la ubicación exacta.</p>
+            <p class="description">Selecciona la ubicación exacta en el mapa.</p>
             
             <div class="twf-agencias-search-map">
                 <input type="text" id="twf_agencias_location_search" 
@@ -147,6 +138,12 @@ class TWF_Agencias_Metaboxes {
                     <input type="text" id="twf_agencias_longitud" name="twf_agencias_longitud" 
                         value="<?php echo esc_attr($longitud); ?>" class="widefat" readonly>
                 </div>
+            </div>
+            <div style="flex: 1; margin-top: 10px;">
+                <label for="twf_agencias_direccion">Dirección (Automática):</label>
+                <input type="text" id="twf_agencias_direccion" name="twf_agencias_direccion" 
+                    class="widefat" readonly>
+                <p class="description">Esta dirección se obtiene automáticamente de las coordenadas seleccionadas en el mapa.</p>
             </div>
         </div>
         
@@ -196,8 +193,8 @@ class TWF_Agencias_Metaboxes {
                     }
                     
                     // Si tenemos dirección pero no coordenadas, geocodificar
-                    if (addressInput.val() && (!latInput.val() || !lngInput.val())) {
-                        searchLocation(addressInput.val());
+                    if ((!latInput.val() || !lngInput.val()) && searchInput.val()) {
+                        searchLocation(searchInput.val());
                     }
                 }
                 
@@ -248,11 +245,6 @@ class TWF_Agencias_Metaboxes {
                             searchLocation(address);
                         }
                     }
-                });
-                
-                // Si hay un campo de dirección, autocompletar la búsqueda
-                addressInput.on('change', function() {
-                    searchInput.val($(this).val());
                 });
                 
                 // Cargar el mapa
@@ -492,32 +484,6 @@ class TWF_Agencias_Metaboxes {
             }
         }
         
-        // Guardar servicios
-        if (isset($_POST['twf_agencias_services_nonce']) && wp_verify_nonce($_POST['twf_agencias_services_nonce'], 'twf_agencias_services_nonce')) {
-            $services = isset($_POST['twf_agencias_services']) ? (array) $_POST['twf_agencias_services'] : array();
-            $sanitized_services = array_map('sanitize_key', $services);
-            update_post_meta($post_id, '_twf_agencias_services', $sanitized_services);
-        }
-        
-        // Guardar icono personalizado
-        if (isset($_POST['twf_agencias_custom_icon_nonce']) && wp_verify_nonce($_POST['twf_agencias_custom_icon_nonce'], 'twf_agencias_custom_icon_nonce')) {
-            if (isset($_POST['twf_agencias_custom_icon'])) {
-                update_post_meta($post_id, '_twf_agencias_custom_icon', absint($_POST['twf_agencias_custom_icon']));
-            }
-        }
-        
-        // Guardar horarios
-        if (isset($_POST['twf_agencias_schedule_nonce']) && wp_verify_nonce($_POST['twf_agencias_schedule_nonce'], 'twf_agencias_schedule_nonce')) {
-            $schedule = isset($_POST['twf_agencias_schedule']) ? $_POST['twf_agencias_schedule'] : array();
-            $sanitized_schedule = array();
-            
-            foreach ($schedule as $day => $day_data) {
-                $sanitized_schedule[$day]['active'] = isset($day_data['active']) ? true : false;
-                $sanitized_schedule[$day]['open'] = isset($day_data['open']) ? sanitize_text_field($day_data['open']) : '09:00';
-                $sanitized_schedule[$day]['close'] = isset($day_data['close']) ? sanitize_text_field($day_data['close']) : '18:00';
-            }
-            
-            update_post_meta($post_id, '_twf_agencias_schedule', $sanitized_schedule);
-        }
+        // Resto del código...
     }
 }
