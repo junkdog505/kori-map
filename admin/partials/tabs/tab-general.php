@@ -17,8 +17,8 @@ $search_button_icon = get_option('twf_agencias_search_button_icon', '');
 
 // Valores por defecto para las etiquetas
 $default_labels = array(
-    'search_input' => 'Buscar tu oficina más cercana',
-    'search_placeholder' => 'Ingresa el nombre de la oficina',
+    'search_input' => 'Buscar oficina por nombre o dirección',
+    'search_placeholder' => 'Ingresa el nombre o dirección de la oficina',
     'city_select' => 'Selecciona ciudad',
     'city_placeholder' => 'Seleccionar ciudad',
     'district_select' => 'Selecciona tu distrito',

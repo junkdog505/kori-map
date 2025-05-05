@@ -2,7 +2,7 @@
     'use strict';
 
     // Variables globales
-    var map, markers = [], infoWindow;
+    var map, markers = [], infoWindow, geocoder;
     
     $(document).ready(function() {
         // Inicializar solo si existe el contenedor del mapa
@@ -67,6 +67,9 @@
         infoWindow = new google.maps.InfoWindow({
             maxWidth: 350
         });
+        
+        // Inicializar geocoder
+        geocoder = new google.maps.Geocoder();
     }
     
     /**
@@ -115,54 +118,101 @@
         
         // Obtener los límites del mapa para centrar
         var bounds = new google.maps.LatLngBounds();
+        var agenciesWithCoords = 0;
         
         // Crear marcadores para cada agencia
         $.each(agencies, function(index, agency) {
-            // Crear marcador solo si tiene coordenadas
-            if (agency.lat && agency.lng) {
-                var position = new google.maps.LatLng(agency.lat, agency.lng);
+            // Si tiene coordenadas, crear marcador directamente
+            if (agency.meta_datos && agency.meta_datos.latitud && agency.meta_datos.longitud) {
+                var lat = parseFloat(agency.meta_datos.latitud);
+                var lng = parseFloat(agency.meta_datos.longitud);
                 
-                // Opciones del marcador
-                var markerOptions = {
-                    position: position,
-                    map: map,
-                    title: agency.title
-                };
-                
-                // Si hay icono personalizado, usarlo
-                if (agency.icon) {
-                    markerOptions.icon = {
-                        url: agency.icon,
-                        scaledSize: new google.maps.Size(40, 40)
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    var position = new google.maps.LatLng(lat, lng);
+                    
+                    // Opciones del marcador
+                    var markerOptions = {
+                        position: position,
+                        map: map,
+                        title: agency.title.rendered
                     };
+                    
+                    // Si hay icono personalizado, usarlo
+                    if (agency.meta_datos.custom_icon) {
+                        markerOptions.icon = {
+                            url: agency.meta_datos.custom_icon,
+                            scaledSize: new google.maps.Size(40, 40)
+                        };
+                    }
+                    
+                    // Crear el marcador
+                    var marker = new google.maps.Marker(markerOptions);
+                    
+                    // Añadir evento de clic al marcador
+                    marker.addListener('click', function() {
+                        infoWindow.setContent(agency.infoWindow);
+                        infoWindow.open(map, marker);
+                    });
+                    
+                    // Añadir el marcador al array
+                    markers.push(marker);
+                    
+                    // Extender los límites
+                    bounds.extend(position);
+                    
+                    agenciesWithCoords++;
                 }
-                
-                // Crear el marcador
-                var marker = new google.maps.Marker(markerOptions);
-                
-                // Añadir evento de clic al marcador
-                marker.addListener('click', function() {
-                    infoWindow.setContent(agency.infoWindow);
-                    infoWindow.open(map, marker);
-                });
-                
-                // Añadir el marcador al array
-                markers.push(marker);
-                
-                // Extender los límites
-                bounds.extend(position);
             }
         });
         
         // Solo ajustar vista si hay marcadores
-        if (markers.length > 0) {
+        if (agenciesWithCoords > 0) {
             map.fitBounds(bounds);
             
             // Si solo hay un marcador, zoom adecuado
-            if (markers.length === 1) {
+            if (agenciesWithCoords === 1) {
                 map.setZoom(15);
             }
+        } else {
+            $('#twf-agencias-results').html('<p>No se encontraron agencias con coordenadas válidas.</p>');
         }
+    }
+    
+    /**
+     * Crea un marcador para una agencia
+     */
+    function createMarker(agency, bounds) {
+        var position = new google.maps.LatLng(agency.lat, agency.lng);
+        
+        // Opciones del marcador
+        var markerOptions = {
+            position: position,
+            map: map,
+            title: agency.title
+        };
+        
+        // Si hay icono personalizado, usarlo
+        if (agency.icon) {
+            markerOptions.icon = {
+                url: agency.icon,
+                scaledSize: new google.maps.Size(40, 40)
+            };
+        }
+        
+        // Crear el marcador
+        var marker = new google.maps.Marker(markerOptions);
+        
+        // Añadir evento de clic al marcador
+        marker.addListener('click', function() {
+            infoWindow.setContent(agency.infoWindow);
+            infoWindow.open(map, marker);
+        });
+        
+        // Añadir el marcador al array
+        markers.push(marker);
+        
+        // Extender los límites
+        bounds.extend(position);
     }
     
     /**

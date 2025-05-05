@@ -24,6 +24,7 @@ class TWF_Agencias {
         $this->load_dependencies();
         $this->define_admin_hooks();
         $this->define_public_hooks();
+        $this->define_rest_api_hooks();
     }
 
     /**
@@ -38,6 +39,9 @@ class TWF_Agencias {
         
         // La clase que maneja los metaboxes
         require_once TWF_AGENCIAS_PLUGIN_DIR . 'includes/class-twf-agencias-metaboxes.php';
+        
+        // La clase que maneja la API REST
+        require_once TWF_AGENCIAS_PLUGIN_DIR . 'includes/class-twf-agencias-rest-api.php';
         
         // La clase que define todas las acciones del lado admin
         require_once TWF_AGENCIAS_PLUGIN_DIR . 'admin/class-twf-agencias-admin.php';
@@ -90,6 +94,17 @@ class TWF_Agencias {
         // Registrar handlers AJAX
         $this->loader->add_action('init', $plugin_public, 'register_ajax_handlers');
     }
+    
+    /**
+     * Registra todos los hooks relacionados con la API REST
+     */
+    private function define_rest_api_hooks() {
+        $plugin_rest_api = new TWF_Agencias_REST_API($this->get_plugin_name(), $this->get_version());
+        
+        // Registrar campos de la API REST
+        $this->loader->add_action('rest_api_init', $plugin_rest_api, 'register_rest_fields');
+    }
+    
     /**
      * Ejecuta el loader para registrar todos los hooks
      */

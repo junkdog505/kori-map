@@ -44,8 +44,8 @@ class TWF_Agencias_Public {
         
         // Valores por defecto para las etiquetas
         $default_labels = array(
-            'search_input'       => 'Buscar tu oficina más cercana',
-            'search_placeholder' => 'Ingresa el nombre de la oficina',
+            'search_input'       => 'Buscar oficina por nombre o dirección',
+            'search_placeholder' => 'Ingresa el nombre o dirección de la oficina',
             'city_select'        => 'Selecciona ciudad',
             'city_placeholder'   => 'Seleccionar ciudad',
             'district_select'    => 'Selecciona tu distrito',
@@ -97,8 +97,8 @@ class TWF_Agencias_Public {
         
         // Valores por defecto para las etiquetas
         $default_labels = array(
-            'search_input'       => 'Buscar tu oficina más cercana',
-            'search_placeholder' => 'Ingresa el nombre de la oficina',
+            'search_input'       => 'Buscar oficina por nombre o dirección',
+            'search_placeholder' => 'Ingresa el nombre o dirección de la oficina',
             'city_select'        => 'Selecciona ciudad',
             'city_placeholder'   => 'Seleccionar ciudad',
             'district_select'    => 'Selecciona tu distrito',
@@ -141,6 +141,12 @@ class TWF_Agencias_Public {
     public function register_ajax_handlers() {
         add_action('wp_ajax_twf_agencias_get_districts', array($this, 'get_districts_callback'));
         add_action('wp_ajax_nopriv_twf_agencias_get_districts', array($this, 'get_districts_callback'));
+        
+        add_action('wp_ajax_twf_agencias_get_agencies', array($this, 'get_agencies_callback'));
+        add_action('wp_ajax_nopriv_twf_agencias_get_agencies', array($this, 'get_agencies_callback'));
+        
+        add_action('wp_ajax_twf_agencias_search_agencies', array($this, 'search_agencies_callback'));
+        add_action('wp_ajax_nopriv_twf_agencias_search_agencies', array($this, 'search_agencies_callback'));
     }
 
     /**
@@ -188,4 +194,343 @@ class TWF_Agencias_Public {
         // Enviar respuesta JSON
         wp_send_json_success($districts_data);
     }
+    
+    /**
+     * Callback para obtener todas las agencias
+     */
+    public function get_agencies_callback() {
+        // Verificar nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'twf_agencias_nonce')) {
+            wp_send_json_error('Acceso no autorizado.');
+        }
+        
+        // Obtener filtros
+        $filters = isset($_POST['filters']) ? $_POST['filters'] : array();
+        
+        // Construir argumentos para la consulta
+        $args = array(
+            'post_type'      => 'agencia',
+            'posts_per_page' => -1,
+            'post_status'    => 'publish',
+        );
+        
+        // Filtrar por ubicación
+        if (!empty($filters['ubicacion'])) {
+            $args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'ubicacion',
+                    'field'    => 'slug',
+                    'terms'    => $filters['ubicacion'],
+                ),
+            );
+        }
+        
+        // Ejecutar la consulta
+        $query = new WP_Query($args);
+        
+        // Preparar los datos para la respuesta
+        $agencies = array();
+        
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                
+                // Datos básicos
+                $agency_id = get_the_ID();
+                $agency_title = get_the_title();
+                
+                // Metadatos
+                $direccion = get_post_meta($agency_id, '_twf_agencias_direccion', true);
+                $telefono = get_post_meta($agency_id, '_twf_agencias_telefono', true);
+                $celular = get_post_meta($agency_id, '_twf_agencias_celular', true);
+                $anexo = get_post_meta($agency_id, '_twf_agencias_anexo', true);
+                $email = get_post_meta($agency_id, '_twf_agencias_email', true);
+                $services = get_post_meta($agency_id, '_twf_agencias_services', true);
+                $schedule = get_post_meta($agency_id, '_twf_agencias_schedule', true);
+                $latitud = get_post_meta($agency_id, '_twf_agencias_latitud', true);
+                $longitud = get_post_meta($agency_id, '_twf_agencias_longitud', true);
+                
+                // Icono personalizado
+                $custom_icon_id = get_post_meta($agency_id, '_twf_agencias_custom_icon', true);
+                $custom_icon_url = '';
+                
+                if (!empty($custom_icon_id)) {
+                    $custom_icon_url = wp_get_attachment_image_url($custom_icon_id, 'full');
+                } else {
+                    $global_icon_id = get_option('twf_agencias_pin_icon', 0);
+                    if (!empty($global_icon_id)) {
+                        $custom_icon_url = wp_get_attachment_image_url($global_icon_id, 'full');
+                    }
+                }
+                
+                // Generar contenido del tooltip
+                $tooltip_content = $this->generate_tooltip_content($agency_id, $agency_title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule);
+                
+                // Añadir a la lista de agencias
+                $agencies[] = array(
+                    'id'         => $agency_id,
+                    'title'      => $agency_title,
+                    'direccion'  => $direccion,
+                    'latitud'    => $latitud,
+                    'longitud'   => $longitud,
+                    'icon'       => $custom_icon_url,
+                    'infoWindow' => $tooltip_content,
+                    'meta_datos' => array(
+                        'latitud'  => $latitud,
+                        'longitud' => $longitud,
+                        'custom_icon' => $custom_icon_url
+                    )
+                );
+            }
+            
+            wp_reset_postdata();
+        }
+        
+        // Enviar respuesta JSON
+        wp_send_json_success($agencies);
+    }
+        
+    /**
+     * Callback para buscar agencias
+     */
+    public function search_agencies_callback() {
+        // Verificar nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'twf_agencias_nonce')) {
+            wp_send_json_error('Acceso no autorizado.');
+        }
+        
+        // Obtener filtros
+        $filters = isset($_POST['filters']) ? $_POST['filters'] : array();
+        
+        // Construir argumentos para la consulta
+        $args = array(
+            'post_type'      => 'agencia',
+            'posts_per_page' => -1,
+            'post_status'    => 'publish',
+        );
+        
+        // Búsqueda por nombre o dirección
+        if (!empty($filters['search'])) {
+            $search_term = sanitize_text_field($filters['search']);
+            
+            // Primero buscar por título (nombre)
+            $args['s'] = $search_term;
+            
+            // Después buscaremos por dirección en el procesamiento
+        }
+        
+        // Filtrar por ciudad
+        if (!empty($filters['city'])) {
+            if (empty($args['tax_query'])) {
+                $args['tax_query'] = array();
+            }
+            
+            $args['tax_query'][] = array(
+                'taxonomy' => 'ubicacion',
+                'field'    => 'slug',
+                'terms'    => $filters['city'],
+            );
+        }
+        
+        // Filtrar por distrito
+        if (!empty($filters['district'])) {
+            if (empty($args['tax_query'])) {
+                $args['tax_query'] = array();
+            }
+            
+            $args['tax_query'][] = array(
+                'taxonomy' => 'ubicacion',
+                'field'    => 'slug',
+                'terms'    => $filters['district'],
+            );
+        }
+        
+        // Ejecutar la consulta
+        $query = new WP_Query($args);
+        
+        // Preparar los datos para la respuesta
+        $agencies = array();
+        $search_by_address = !empty($filters['search']);
+        $search_term_lower = strtolower($filters['search']);
+        
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                
+                $agency_id = get_the_ID();
+                $agency_title = get_the_title();
+                
+                // Metadatos
+                $direccion = get_post_meta($agency_id, '_twf_agencias_direccion', true);
+                $telefono = get_post_meta($agency_id, '_twf_agencias_telefono', true);
+                $celular = get_post_meta($agency_id, '_twf_agencias_celular', true);
+                $anexo = get_post_meta($agency_id, '_twf_agencias_anexo', true);
+                $email = get_post_meta($agency_id, '_twf_agencias_email', true);
+                $services = get_post_meta($agency_id, '_twf_agencias_services', true);
+                $schedule = get_post_meta($agency_id, '_twf_agencias_schedule', true);
+                
+                // Si estamos buscando por dirección también y no hay match en el título
+                if ($search_by_address && empty($args['s'])) {
+                    // Si la dirección no contiene el término de búsqueda, saltar esta agencia
+                    if (strpos(strtolower($direccion), $search_term_lower) === false) {
+                        continue;
+                    }
+                }
+                
+                // Icono personalizado
+                $custom_icon_id = get_post_meta($agency_id, '_twf_agencias_custom_icon', true);
+                $custom_icon_url = '';
+                
+                if (!empty($custom_icon_id)) {
+                    $custom_icon_url = wp_get_attachment_image_url($custom_icon_id, 'full');
+                } else {
+                    $global_icon_id = get_option('twf_agencias_pin_icon', 0);
+                    if (!empty($global_icon_id)) {
+                        $custom_icon_url = wp_get_attachment_image_url($global_icon_id, 'full');
+                    }
+                }
+                
+                // Generar contenido del tooltip
+                $tooltip_content = $this->generate_tooltip_content($agency_id, $agency_title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule);
+                
+                // Añadir a la lista de agencias
+                $agencies[] = array(
+                    'id'         => $agency_id,
+                    'title'      => $agency_title,
+                    'direccion'  => $direccion,
+                    'lat'        => '',
+                    'lng'        => '',
+                    'icon'       => $custom_icon_url,
+                    'infoWindow' => $tooltip_content,
+                );
+            }
+            
+            wp_reset_postdata();
+        }
+        
+        // Enviar respuesta JSON
+        wp_send_json_success($agencies);
+    }
+    
+    /**
+ * Genera el contenido HTML del tooltip
+ */
+private function generate_tooltip_content($agency_id, $title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule) {
+    // Obtener configuración de campos a mostrar
+    $tooltip_fields = get_option('twf_agencias_tooltip_fields', array());
+    
+    // Valores por defecto
+    $default_fields = array(
+        'title'     => true,
+        'address'   => true,
+        'phone'     => true,
+        'mobile'    => true,
+        'email'     => false,
+        'schedule'  => true,
+        'services'  => true,
+    );
+    
+    // Combinar con valores predeterminados
+    $tooltip_fields = wp_parse_args($tooltip_fields, $default_fields);
+    
+    // Iniciar contenido
+    $content = '<div class="twf-agencias-tooltip">';
+    
+    // Título
+    if ($tooltip_fields['title'] && !empty($title)) {
+        $content .= '<h3 class="twf-agencias-tooltip-title">' . esc_html($title) . '</h3>';
+    }
+    
+    // Dirección
+    if ($tooltip_fields['address'] && !empty($direccion)) {
+        $content .= '<div class="twf-agencias-tooltip-address">' . esc_html($direccion) . '</div>';
+    }
+    
+    // Información de contacto
+    $has_contact = ($tooltip_fields['phone'] && !empty($telefono)) || 
+                  ($tooltip_fields['mobile'] && !empty($celular)) || 
+                  ($tooltip_fields['email'] && !empty($email));
+    
+    if ($has_contact) {
+        $content .= '<div class="twf-agencias-tooltip-contact">';
+        
+        // Teléfono
+        if ($tooltip_fields['phone'] && !empty($telefono)) {
+            $content .= '<div><strong>Teléfono:</strong> ' . esc_html($telefono);
+            
+            // Añadir anexo si existe
+            if (!empty($anexo)) {
+                $content .= ' Anexo: ' . esc_html($anexo);
+            }
+            
+            $content .= '</div>';
+        }
+        
+        // Celular
+        if ($tooltip_fields['mobile'] && !empty($celular)) {
+            $content .= '<div><strong>Celular:</strong> ' . esc_html($celular) . '</div>';
+        }
+        
+        // Email
+        if ($tooltip_fields['email'] && !empty($email)) {
+            $content .= '<div><strong>Email:</strong> <a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></div>';
+        }
+        
+        $content .= '</div>';
+    }
+    
+    // Horarios
+    if ($tooltip_fields['schedule'] && !empty($schedule) && is_array($schedule)) {
+        $content .= '<div class="twf-agencias-tooltip-schedule">';
+        $content .= '<strong>Horarios:</strong>';
+        $content .= '<ul>';
+        
+        $days_map = array(
+            'monday'    => 'Lunes',
+            'tuesday'   => 'Martes',
+            'wednesday' => 'Miércoles',
+            'thursday'  => 'Jueves',
+            'friday'    => 'Viernes',
+            'saturday'  => 'Sábado',
+            'sunday'    => 'Domingo',
+        );
+        
+        foreach ($schedule as $day_id => $day_data) {
+            if (isset($day_data['active']) && $day_data['active']) {
+                $day_name = isset($days_map[$day_id]) ? $days_map[$day_id] : ucfirst($day_id);
+                $open = isset($day_data['open']) ? $day_data['open'] : '09:00';
+                $close = isset($day_data['close']) ? $day_data['close'] : '18:00';
+                
+                $content .= '<li>' . esc_html($day_name) . ': ' . esc_html($open) . ' - ' . esc_html($close) . '</li>';
+            }
+        }
+        
+        $content .= '</ul>';
+        $content .= '</div>';
+    }
+    
+    // Servicios
+    if ($tooltip_fields['services'] && !empty($services) && is_array($services)) {
+        $content .= '<div class="twf-agencias-tooltip-services">';
+        $content .= '<strong>Servicios:</strong>';
+        $content .= '<ul>';
+        
+        // Obtener todos los servicios disponibles desde la configuración
+        $all_services = get_option('twf_agencias_services', array());
+        
+        foreach ($services as $service_id) {
+            if (isset($all_services[$service_id]['label'])) {
+                $service_name = $all_services[$service_id]['label'];
+                $content .= '<li>' . esc_html($service_name) . '</li>';
+            }
+        }
+        
+        $content .= '</ul>';
+        $content .= '</div>';
+    }
+    
+    $content .= '</div>';
+    
+    return $content;
+}
 }

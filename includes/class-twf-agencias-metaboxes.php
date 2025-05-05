@@ -77,6 +77,11 @@ class TWF_Agencias_Metaboxes {
         $anexo = get_post_meta($post->ID, '_twf_agencias_anexo', true);
         $email = get_post_meta($post->ID, '_twf_agencias_email', true);
         $direccion = get_post_meta($post->ID, '_twf_agencias_direccion', true);
+        $latitud = get_post_meta($post->ID, '_twf_agencias_latitud', true);
+        $longitud = get_post_meta($post->ID, '_twf_agencias_longitud', true);
+        
+        // Obtener la API key
+        $api_key = get_option('twf_agencias_google_maps_api_key', '');
         
         // Campos del formulario con nuevo diseño
         ?>
@@ -85,12 +90,12 @@ class TWF_Agencias_Metaboxes {
                 <div class="twf-agencias-contact-column">
                     <label for="twf_agencias_celular">Celular:</label>
                     <input type="text" id="twf_agencias_celular" name="twf_agencias_celular" 
-                           value="<?php echo esc_attr($celular); ?>" class="widefat">
+                        value="<?php echo esc_attr($celular); ?>" class="widefat">
                 </div>
                 <div class="twf-agencias-contact-column">
                     <label for="twf_agencias_telefono">Teléfono:</label>
                     <input type="text" id="twf_agencias_telefono" name="twf_agencias_telefono" 
-                           value="<?php echo esc_attr($telefono); ?>" class="widefat">
+                        value="<?php echo esc_attr($telefono); ?>" class="widefat">
                 </div>
             </div>
             
@@ -98,12 +103,12 @@ class TWF_Agencias_Metaboxes {
                 <div class="twf-agencias-contact-column">
                     <label for="twf_agencias_anexo">Anexo:</label>
                     <input type="text" id="twf_agencias_anexo" name="twf_agencias_anexo" 
-                           value="<?php echo esc_attr($anexo); ?>" class="widefat">
+                        value="<?php echo esc_attr($anexo); ?>" class="widefat">
                 </div>
                 <div class="twf-agencias-contact-column">
                     <label for="twf_agencias_email">Correo Electrónico:</label>
                     <input type="email" id="twf_agencias_email" name="twf_agencias_email" 
-                           value="<?php echo esc_attr($email); ?>" class="widefat">
+                        value="<?php echo esc_attr($email); ?>" class="widefat">
                 </div>
             </div>
             
@@ -111,10 +116,160 @@ class TWF_Agencias_Metaboxes {
                 <div class="twf-agencias-contact-full">
                     <label for="twf_agencias_direccion">Dirección:</label>
                     <input type="text" id="twf_agencias_direccion" name="twf_agencias_direccion" 
-                           value="<?php echo esc_attr($direccion); ?>" class="widefat">
+                        value="<?php echo esc_attr($direccion); ?>" class="widefat">
                 </div>
             </div>
         </div>
+        
+        <div class="twf-agencias-location-fields" style="margin-top: 15px;">
+            <h3 style="margin-top: 0;">Ubicación en el Mapa</h3>
+            <p class="description">Busca una dirección o haz clic en el mapa para seleccionar la ubicación exacta.</p>
+            
+            <div class="twf-agencias-search-map">
+                <input type="text" id="twf_agencias_location_search" 
+                    placeholder="Buscar dirección..." class="widefat" 
+                    style="margin-bottom: 10px;">
+                <button type="button" id="twf_agencias_search_location" class="button">
+                    Buscar
+                </button>
+            </div>
+            
+            <div id="twf_agencias_location_map" style="height: 300px; margin-top: 10px; border: 1px solid #ddd;"></div>
+            
+            <div class="twf-agencias-location-coords" style="display: flex; gap: 10px; margin-top: 10px;">
+                <div style="flex: 1;">
+                    <label for="twf_agencias_latitud">Latitud:</label>
+                    <input type="text" id="twf_agencias_latitud" name="twf_agencias_latitud" 
+                        value="<?php echo esc_attr($latitud); ?>" class="widefat" readonly>
+                </div>
+                <div style="flex: 1;">
+                    <label for="twf_agencias_longitud">Longitud:</label>
+                    <input type="text" id="twf_agencias_longitud" name="twf_agencias_longitud" 
+                        value="<?php echo esc_attr($longitud); ?>" class="widefat" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <?php if (!empty($api_key)) : ?>
+        <script>
+            jQuery(document).ready(function($) {
+                var map, marker;
+                var mapDiv = document.getElementById('twf_agencias_location_map');
+                var latInput = $('#twf_agencias_latitud');
+                var lngInput = $('#twf_agencias_longitud');
+                var addressInput = $('#twf_agencias_direccion');
+                var searchInput = $('#twf_agencias_location_search');
+                
+                // Inicializar el mapa
+                function initMap() {
+                    var defaultLat = latInput.val() ? parseFloat(latInput.val()) : -12.0464;
+                    var defaultLng = lngInput.val() ? parseFloat(lngInput.val()) : -77.0428;
+                    var defaultLatLng = {lat: defaultLat, lng: defaultLng};
+                    
+                    map = new google.maps.Map(mapDiv, {
+                        center: defaultLatLng,
+                        zoom: 14,
+                        mapTypeControl: true,
+                        streetViewControl: false
+                    });
+                    
+                    // Crear marcador
+                    marker = new google.maps.Marker({
+                        position: defaultLatLng,
+                        map: map,
+                        draggable: true
+                    });
+                    
+                    // Evento de clic en el mapa
+                    google.maps.event.addListener(map, 'click', function(event) {
+                        updateMarkerPosition(event.latLng);
+                    });
+                    
+                    // Evento de fin de arrastre del marcador
+                    google.maps.event.addListener(marker, 'dragend', function() {
+                        updateMarkerPosition(marker.getPosition());
+                    });
+                    
+                    // Si tenemos coordenadas guardadas, mostrar el marcador
+                    if (latInput.val() && lngInput.val()) {
+                        marker.setVisible(true);
+                    }
+                    
+                    // Si tenemos dirección pero no coordenadas, geocodificar
+                    if (addressInput.val() && (!latInput.val() || !lngInput.val())) {
+                        searchLocation(addressInput.val());
+                    }
+                }
+                
+                // Actualizar la posición del marcador y los campos de coordenadas
+                function updateMarkerPosition(latLng) {
+                    marker.setPosition(latLng);
+                    marker.setVisible(true);
+                    latInput.val(latLng.lat().toFixed(6));
+                    lngInput.val(latLng.lng().toFixed(6));
+                    
+                    // Geocodificar inverso para obtener la dirección
+                    var geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({'location': latLng}, function(results, status) {
+                        if (status === 'OK' && results[0]) {
+                            addressInput.val(results[0].formatted_address);
+                            searchInput.val(results[0].formatted_address);
+                        }
+                    });
+                }
+                
+                // Buscar una ubicación
+                function searchLocation(address) {
+                    var geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({'address': address}, function(results, status) {
+                        if (status === 'OK' && results[0]) {
+                            map.setCenter(results[0].geometry.location);
+                            updateMarkerPosition(results[0].geometry.location);
+                        } else {
+                            alert('No se pudo encontrar la ubicación: ' + status);
+                        }
+                    });
+                }
+                
+                // Botón de búsqueda
+                $('#twf_agencias_search_location').on('click', function() {
+                    var address = searchInput.val();
+                    if (address) {
+                        searchLocation(address);
+                    }
+                });
+                
+                // Buscar al presionar Enter
+                searchInput.on('keypress', function(e) {
+                    if (e.which === 13) {
+                        e.preventDefault();
+                        var address = searchInput.val();
+                        if (address) {
+                            searchLocation(address);
+                        }
+                    }
+                });
+                
+                // Si hay un campo de dirección, autocompletar la búsqueda
+                addressInput.on('change', function() {
+                    searchInput.val($(this).val());
+                });
+                
+                // Cargar el mapa
+                var script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo esc_js($api_key); ?>&callback=initMap&libraries=places';
+                script.async = true;
+                document.head.appendChild(script);
+                
+                // Callback global para inicializar el mapa
+                window.initMap = initMap;
+            });
+        </script>
+        <?php else : ?>
+        <div class="notice notice-error inline">
+            <p>No se ha configurado la API Key de Google Maps. Por favor, configúrala en la <a href="<?php echo admin_url('admin.php?page=twf-agencias-settings&tab=general'); ?>">configuración general</a> del plugin.</p>
+        </div>
+        <?php endif; ?>
         <?php
     }
 
@@ -325,6 +480,15 @@ class TWF_Agencias_Metaboxes {
             
             if (isset($_POST['twf_agencias_direccion'])) {
                 update_post_meta($post_id, '_twf_agencias_direccion', sanitize_text_field($_POST['twf_agencias_direccion']));
+            }
+            
+            // Guardar coordenadas
+            if (isset($_POST['twf_agencias_latitud'])) {
+                update_post_meta($post_id, '_twf_agencias_latitud', sanitize_text_field($_POST['twf_agencias_latitud']));
+            }
+            
+            if (isset($_POST['twf_agencias_longitud'])) {
+                update_post_meta($post_id, '_twf_agencias_longitud', sanitize_text_field($_POST['twf_agencias_longitud']));
             }
         }
         
