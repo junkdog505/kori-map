@@ -22,9 +22,11 @@
 
 .twf-agencias-filter-row label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #333;
+    margin-bottom: 10px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    color: #1F4965 !important;
+    font-size: 16px;
 }
 
 .twf-agencias-search-wrapper {
