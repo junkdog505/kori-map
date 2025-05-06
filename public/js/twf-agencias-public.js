@@ -19,6 +19,8 @@
             
             // Inicializar eventos
             initEvents();
+
+            initCards();
             
             // Crear contenedor de notificación
             createNotification();
@@ -572,7 +574,289 @@
             }
         });
     }
-    
+
+    /**
+     * Inicializa la funcionalidad de las tarjetas
+     */
+    function initCards() {
+        var $cardsContainer = $('.twf-agencias-cards-container');
+        
+        if ($cardsContainer.length) {
+            // Cargar las agencias iniciales
+            loadAgenciesForCards();
+            
+            // Manejar cambios en los filtros
+            $(document).on('twf_agencias_filtered', function(event, data) {
+                loadAgenciesForCards(data.filters);
+            });
+            
+            // Manejar la paginación
+            $(document).on('click', '.twf-agencias-pagination-item', function() {
+                if (!$(this).hasClass('active')) {
+                    var page = $(this).data('page');
+                    $cardsContainer.attr('data-page', page);
+                    loadAgenciesForCards();
+                }
+            });
+            
+            // Manejar flechas de paginación
+            $(document).on('click', '.twf-agencias-pagination-arrow', function() {
+                if (!$(this).hasClass('disabled')) {
+                    var currentPage = parseInt($cardsContainer.attr('data-page'));
+                    var totalPages = parseInt($cardsContainer.attr('data-total-pages'));
+                    var page;
+                    
+                    if ($(this).hasClass('prev')) {
+                        page = Math.max(1, currentPage - 1);
+                    } else {
+                        page = Math.min(totalPages, currentPage + 1);
+                    }
+                    
+                    if (page !== currentPage) {
+                        $cardsContainer.attr('data-page', page);
+                        loadAgenciesForCards();
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Carga las agencias para las tarjetas
+     */
+    function loadAgenciesForCards(customFilters) {
+        var $cardsContainer = $('.twf-agencias-cards-container');
+        
+        if (!$cardsContainer.length) return;
+        
+        var page = parseInt($cardsContainer.attr('data-page')) || 1;
+        var itemsPerPage = parseInt($cardsContainer.attr('data-items-per-page')) || 4;
+        
+        // Filtros iniciales
+        var filters = customFilters || {
+            ubicacion: $cardsContainer.data('ubicacion') || '',
+            servicios: $cardsContainer.data('servicios') || '',
+            page: page,
+            items_per_page: itemsPerPage
+        };
+        
+        // Hacer la solicitud AJAX
+        $.ajax({
+            url: twf_agencias_vars.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'twf_agencias_get_agencies',
+                nonce: twf_agencias_vars.nonce,
+                filters: filters
+            },
+            beforeSend: function() {
+                $cardsContainer.addClass('loading');
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    renderCards(response.data, page, itemsPerPage);
+                } else {
+                    $cardsContainer.find('.twf-agencias-cards-grid').html('<div class="twf-agencias-no-results">No se encontraron agencias con los filtros seleccionados.</div>');
+                    $cardsContainer.find('.twf-agencias-pagination').empty();
+                }
+            },
+            error: function() {
+                showNotification('Error al cargar las agencias. Por favor, intenta nuevamente.', 3000);
+            },
+            complete: function() {
+                $cardsContainer.removeClass('loading');
+            }
+        });
+    }
+
+    /**
+     * Renderiza las tarjetas de agencias
+     */
+    function renderCards(agencies, page, itemsPerPage) {
+        var $cardsContainer = $('.twf-agencias-cards-container');
+        var $cardsGrid = $cardsContainer.find('.twf-agencias-cards-grid');
+        var $pagination = $cardsContainer.find('.twf-agencias-pagination');
+        
+        // Forzar items_per_page a 4 (1 elemento por fila, 4 filas)
+        itemsPerPage = 4;
+        
+        // Limpiar contenedores
+        $cardsGrid.empty();
+        $pagination.empty();
+        
+        // Si no hay agencias, mostrar mensaje
+        if (!agencies || agencies.length === 0) {
+            $cardsGrid.html('<div class="twf-agencias-no-results">No se encontraron agencias.</div>');
+            return;
+        }
+        
+        // Calcular total de páginas
+        var totalAgencies = agencies.length;
+        var totalPages = Math.ceil(totalAgencies / itemsPerPage);
+        
+        // Guardar el total de páginas en el contenedor
+        $cardsContainer.attr('data-total-pages', totalPages);
+        
+        // Calcular índices para la página actual
+        var startIndex = (page - 1) * itemsPerPage;
+        var endIndex = Math.min(startIndex + itemsPerPage, totalAgencies);
+        
+        // Obtener las agencias para la página actual
+        var pageAgencies = agencies.slice(startIndex, endIndex);
+        
+        // Crear las tarjetas
+        $.each(pageAgencies, function(index, agency) {
+            var card = createAgencyCard(agency);
+            $cardsGrid.append(card);
+        });
+        
+        // Crear la paginación
+        createPagination(page, totalPages, $pagination);
+    }
+
+    /**
+     * Crea una tarjeta de agencia
+     */
+    function createAgencyCard(agency) {
+        var title = agency.title ? (agency.title.rendered || agency.title) : "Agencia";
+        var featuredImage = agency.featured_image || '';
+        
+        if (!featuredImage) {
+            featuredImage = twf_agencias_vars.plugin_url + 'public/images/placeholder.jpg';
+        }
+        
+        // Obtener categoría (ciudad)
+        var category = "Oficina";
+        if (agency.terms && agency.terms.ubicacion) {
+            // Primero buscar el término que tiene parent = 0 (ciudad/término padre)
+            var cityTerm = agency.terms.ubicacion.find(function(term) {
+                return term.parent === 0;
+            });
+            
+            if (cityTerm) {
+                category += " " + cityTerm.name;
+            } else {
+                // Si no se encuentra un término padre directamente, buscar el padre del término actual
+                var districtTerm = agency.terms.ubicacion[0]; // Tomar el primer término disponible
+                
+                if (districtTerm && districtTerm.parent !== 0) {
+                    // Necesitamos buscar el nombre del término padre usando su ID
+                    var parentId = districtTerm.parent;
+                    
+                    // Esta información debería estar disponible en twf_agencias_vars.location_terms si la pasamos desde el PHP
+                    if (twf_agencias_vars.location_terms && twf_agencias_vars.location_terms[parentId]) {
+                        category += " " + twf_agencias_vars.location_terms[parentId].name;
+                    }
+                }
+            }
+        }
+        
+        var address = '';
+        var phone = '';
+        var anexo = '';
+        var email = '';
+        var services = [];
+
+        console.log('Servicios para agencia ' + agency.id + ':', services);
+
+        
+        if (agency.meta_datos) {
+            address = agency.meta_datos.direccion || '';
+            phone = agency.meta_datos.telefono || '';
+            anexo = agency.meta_datos.anexo || '';
+            email = agency.meta_datos.email || '';
+            services = agency.meta_datos.services || [];
+        }
+        
+        var servicesHtml = '';
+        if (services && services.length > 0) {
+            var allServices = twf_agencias_vars.services || {};
+            
+            servicesHtml = '<div class="twf-agencias-card-services">';
+            servicesHtml += '<div class="twf-agencias-card-services-title">Operaciones que puede realizar</div>';
+            servicesHtml += '<ul class="twf-agencias-card-services-list">';
+            
+            $.each(services, function(index, serviceId) {
+                var serviceName = allServices[serviceId] ? allServices[serviceId].label : serviceId;
+                servicesHtml += '<li class="twf-agencias-card-services-item">' + serviceName + '</li>';
+            });
+            
+            servicesHtml += '</ul>';
+            servicesHtml += '</div>';
+        }
+        
+        var html = '<div class="twf-agencias-card" data-id="' + agency.id + '">';
+        html += '<div class="twf-agencias-card-image" style="background-image: url(' + featuredImage + ');"></div>';
+        html += '<div class="twf-agencias-card-content">';
+        html += '<div class="twf-agencias-card-category">' + category + '</div>';
+        html += '<h3 class="twf-agencias-card-title">' + title + '</h3>';
+        html += '<div class="twf-agencias-card-section">';
+        html += '<div class="twf-agencias-card-section-title">Dirección</div>';
+        html += '<div class="twf-agencias-card-address">' + address + '</div>';
+        html += '</div>';
+        html += '<div class="twf-agencias-card-section">';
+        html += '<div class="twf-agencias-card-section-title">Número de Contacto</div>';
+        html += '<div class="twf-agencias-card-contact">';
+        html += '<div class="twf-agencias-card-contact-icon">';
+        html += '<img src="' + twf_agencias_vars.plugin_url + 'public/images/customer-support.svg" alt="Contacto" />';
+        html += '</div>';
+        html += '<div class="twf-agencias-card-contact-info">';
+        html += phone;
+        if (anexo) {
+            html += ' <span>Anexo ' + anexo + '</span>';
+        }
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += servicesHtml;
+        html += '<a href="https://maps.google.com/?q=' + address + '" target="_blank" class="twf-agencias-card-button">Cómo llegar</a>';
+        html += '</div>';
+        html += '</div>';
+        
+        return html;
+    }
+
+    /**
+     * Crea la paginación
+     */
+    function createPagination(currentPage, totalPages, container) {
+        if (totalPages <= 1) return;
+        
+        // Flecha anterior
+        var prevDisabled = currentPage === 1 ? ' disabled' : '';
+        var pagination = '<div class="twf-agencias-pagination-arrow prev' + prevDisabled + '"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+        
+        // Determinar qué páginas mostrar
+        var startPage = Math.max(1, currentPage - 2);
+        var endPage = Math.min(totalPages, startPage + 4);
+        
+        // Ajustar startPage si endPage está en el límite
+        if (endPage === totalPages) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        // Generar botones de página
+        for (var i = startPage; i <= endPage; i++) {
+            var activeClass = i === currentPage ? ' active' : '';
+            pagination += '<div class="twf-agencias-pagination-item' + activeClass + '" data-page="' + i + '">' + i + '</div>';
+        }
+        
+        // Flecha siguiente
+        var nextDisabled = currentPage === totalPages ? ' disabled' : '';
+        pagination += '<div class="twf-agencias-pagination-arrow next' + nextDisabled + '"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+        
+        container.html(pagination);
+    }
+
+    /**
+     * Dispara un evento personalizado cuando se filtran las agencias
+     */
+    function triggerFilteredEvent(filters) {
+        $(document).trigger('twf_agencias_filtered', {
+            filters: filters
+        });
+    }
+
     /**
      * Filtra agencias por ciudad
      */
@@ -581,6 +865,8 @@
         var filters = {
             city: citySlug
         };
+
+        triggerFilteredEvent(filters);
         
         // Hacer la solicitud AJAX
         $.ajax({
@@ -636,6 +922,8 @@
         var filters = {
             district: districtSlug
         };
+
+        triggerFilteredEvent(filters);
         
         // Hacer la solicitud AJAX
         $.ajax({
@@ -692,8 +980,11 @@
         if (!searchTerm) {
             // Si no hay término de búsqueda, mostrar todas
             displayAgencies(agencies);
+            // Disparar evento de filtrado sin filtros
+            triggerFilteredEvent({});
             return;
         }
+        
         
         var filters = {
             search: searchTerm,
@@ -701,6 +992,9 @@
             district: $('#twf-agencias-district-select').val()
         };
         
+        // Disparar evento de filtrado
+        triggerFilteredEvent(filters);
+
         // Hacer la solicitud AJAX
         $.ajax({
             url: twf_agencias_vars.ajax_url,

@@ -483,6 +483,17 @@ class TWF_Agencias_Metaboxes {
             if (isset($_POST['twf_agencias_longitud'])) {
                 update_post_meta($post_id, '_twf_agencias_longitud', sanitize_text_field($_POST['twf_agencias_longitud']));
             }
+            // Guardar servicios
+            if (isset($_POST['twf_agencias_services_nonce']) && wp_verify_nonce($_POST['twf_agencias_services_nonce'], 'twf_agencias_services_nonce')) {
+                $services = isset($_POST['twf_agencias_services']) ? $_POST['twf_agencias_services'] : array();
+                update_post_meta($post_id, '_twf_agencias_services', $services);
+            }
+
+            // Guardar horarios
+            if (isset($_POST['twf_agencias_schedule_nonce']) && wp_verify_nonce($_POST['twf_agencias_schedule_nonce'], 'twf_agencias_schedule_nonce')) {
+                $schedule = isset($_POST['twf_agencias_schedule']) ? $_POST['twf_agencias_schedule'] : array();
+                update_post_meta($post_id, '_twf_agencias_schedule', $schedule);
+            }
         }
         
         // Resto del código...

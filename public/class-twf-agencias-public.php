@@ -38,6 +38,9 @@ class TWF_Agencias_Public {
     public function enqueue_scripts() {
         wp_enqueue_script($this->plugin_name, TWF_AGENCIAS_PLUGIN_URL . 'public/js/twf-agencias-public.js', array('jquery'), $this->version, false);
         
+        // Obtener servicios
+        $all_services = get_option('twf_agencias_services', array());
+        
         // Pasar variables al script
         $api_key = get_option('twf_agencias_google_maps_api_key', '');
         $labels = get_option('twf_agencias_labels', array());
@@ -64,16 +67,20 @@ class TWF_Agencias_Public {
                 'labels'  => $labels,
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('twf_agencias_nonce'),
+                'plugin_url' => TWF_AGENCIAS_PLUGIN_URL,
+                'services' => $all_services,
+                'location_terms' => $this->get_location_terms() 
             )
         );
     }
-
+    
     /**
      * Registrar shortcodes
      */
     public function register_shortcodes() {
         add_shortcode('twf_agencias_map', array($this, 'render_map_shortcode'));
         add_shortcode('twf_agencias_filters', array($this, 'render_filters_shortcode'));
+        add_shortcode('twf_agencias_cards', array($this, 'render_cards_shortcode'));
     }
     /**
      * Renderiza el shortcode del mapa
@@ -100,6 +107,34 @@ class TWF_Agencias_Public {
         
         // Incluir la vista del mapa
         include TWF_AGENCIAS_PLUGIN_DIR . 'public/partials/twf-agencias-map-display.php';
+        
+        return ob_get_clean();
+    }
+
+    /**
+     * Renderiza el shortcode de tarjetas de agencias
+     */
+    public function render_cards_shortcode($atts) {
+        // Extraer atributos del shortcode
+        $atts = shortcode_atts(
+            array(
+                'items_per_page' => '4',
+                'ubicacion'      => '',
+                'servicios'      => '',
+            ),
+            $atts,
+            'twf_agencias_cards'
+        );
+        
+        // Cargar los scripts necesarios
+        $this->enqueue_styles();
+        $this->enqueue_scripts();
+        
+        // Iniciar el buffer de salida
+        ob_start();
+        
+        // Incluir la vista de las tarjetas
+        include TWF_AGENCIAS_PLUGIN_DIR . 'public/partials/twf-agencias-cards-display.php';
         
         return ob_get_clean();
     }
@@ -251,6 +286,9 @@ class TWF_Agencias_Public {
         // Ejecutar la consulta
         $query = new WP_Query($args);
         
+        // Obtener todos los términos de ubicación para poder acceder a los padres
+        $all_location_terms = $this->get_location_terms();
+        
         // Preparar los datos para la respuesta
         $agencies = array();
         
@@ -261,6 +299,39 @@ class TWF_Agencias_Public {
                 // Datos básicos
                 $agency_id = get_the_ID();
                 $agency_title = get_the_title();
+                
+                // Imagen destacada
+                $featured_image = '';
+                if (has_post_thumbnail($agency_id)) {
+                    $featured_image = get_the_post_thumbnail_url($agency_id, 'large');
+                }
+                
+                // Términos de taxonomía
+                $terms = array();
+                $taxonomies = array('ubicacion');
+                
+                foreach ($taxonomies as $taxonomy) {
+                    $post_terms = get_the_terms($agency_id, $taxonomy);
+                    if (!empty($post_terms) && !is_wp_error($post_terms)) {
+                        $terms[$taxonomy] = array();
+                        foreach ($post_terms as $term) {
+                            // Obtener información del término padre si existe
+                            $parent_term = null;
+                            if ($term->parent > 0 && isset($all_location_terms[$term->parent])) {
+                                $parent_term = $all_location_terms[$term->parent];
+                            }
+                            
+                            $terms[$taxonomy][] = array(
+                                'id' => $term->term_id,
+                                'name' => $term->name,
+                                'slug' => $term->slug,
+                                'parent' => $term->parent,
+                                'parent_name' => $parent_term ? $parent_term['name'] : '',
+                                'parent_slug' => $parent_term ? $parent_term['slug'] : ''
+                            );
+                        }
+                    }
+                }
                 
                 // Metadatos
                 $direccion = get_post_meta($agency_id, '_twf_agencias_direccion', true);
@@ -293,14 +364,23 @@ class TWF_Agencias_Public {
                 $agencies[] = array(
                     'id'         => $agency_id,
                     'title'      => $agency_title,
+                    'featured_image' => $featured_image,
+                    'terms'      => $terms,
                     'direccion'  => $direccion,
                     'latitud'    => $latitud,
                     'longitud'   => $longitud,
                     'icon'       => $custom_icon_url,
                     'infoWindow' => $tooltip_content,
                     'meta_datos' => array(
-                        'latitud'  => $latitud,
-                        'longitud' => $longitud,
+                        'latitud'    => $latitud,
+                        'longitud'   => $longitud,
+                        'direccion'  => $direccion,
+                        'telefono'   => $telefono,
+                        'celular'    => $celular,
+                        'anexo'      => $anexo,
+                        'email'      => $email,
+                        'services'   => $services,
+                        'schedule'   => $schedule,
                         'custom_icon' => $custom_icon_url
                     )
                 );
@@ -312,7 +392,31 @@ class TWF_Agencias_Public {
         // Enviar respuesta JSON
         wp_send_json_success($agencies);
     }
+     
+    /**
+     * Obtiene todos los términos de la taxonomía ubicación
+     */
+    private function get_location_terms() {
+        $terms = get_terms(array(
+            'taxonomy' => 'ubicacion',
+            'hide_empty' => false
+        ));
         
+        $terms_array = array();
+        if (!is_wp_error($terms)) {
+            foreach ($terms as $term) {
+                $terms_array[$term->term_id] = array(
+                    'id' => $term->term_id,
+                    'name' => $term->name,
+                    'slug' => $term->slug,
+                    'parent' => $term->parent
+                );
+            }
+        }
+        
+        return $terms_array;
+    }
+
     /**
      * Callback para buscar agencias
      */
