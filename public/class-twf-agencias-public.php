@@ -272,15 +272,47 @@ class TWF_Agencias_Public {
             'post_status'    => 'publish',
         );
         
-        // Filtrar por ubicación
-        if (!empty($filters['ubicacion'])) {
-            $args['tax_query'] = array(
-                array(
-                    'taxonomy' => 'ubicacion',
-                    'field'    => 'slug',
-                    'terms'    => $filters['ubicacion'],
-                ),
+        // Preparar filtros de taxonomía
+        $tax_query = array();
+        
+        // Filtrar por ciudad específica
+        if (!empty($filters['city'])) {
+            $tax_query[] = array(
+                'taxonomy' => 'ubicacion',
+                'field'    => 'slug',
+                'terms'    => $filters['city'],
             );
+        }
+        
+        // Filtrar por distrito específico
+        if (!empty($filters['district'])) {
+            $tax_query[] = array(
+                'taxonomy' => 'ubicacion',
+                'field'    => 'slug',
+                'terms'    => $filters['district'],
+            );
+        }
+        
+        // Filtrar por ubicación general
+        if (!empty($filters['ubicacion'])) {
+            $tax_query[] = array(
+                'taxonomy' => 'ubicacion',
+                'field'    => 'slug',
+                'terms'    => $filters['ubicacion'],
+            );
+        }
+        
+        // Añadir tax_query si hay filtros
+        if (!empty($tax_query)) {
+            if (count($tax_query) > 1) {
+                $tax_query['relation'] = 'AND';
+            }
+            $args['tax_query'] = $tax_query;
+        }
+        
+        // Filtrar por búsqueda de texto
+        if (!empty($filters['search'])) {
+            $args['s'] = sanitize_text_field($filters['search']);
         }
         
         // Ejecutar la consulta
@@ -335,6 +367,7 @@ class TWF_Agencias_Public {
                 
                 // Metadatos
                 $direccion = get_post_meta($agency_id, '_twf_agencias_direccion', true);
+                $direccion_mostrar = get_post_meta($agency_id, '_twf_agencias_direccion_mostrar', true);
                 $telefono = get_post_meta($agency_id, '_twf_agencias_telefono', true);
                 $celular = get_post_meta($agency_id, '_twf_agencias_celular', true);
                 $anexo = get_post_meta($agency_id, '_twf_agencias_anexo', true);
@@ -343,6 +376,9 @@ class TWF_Agencias_Public {
                 $schedule = get_post_meta($agency_id, '_twf_agencias_schedule', true);
                 $latitud = get_post_meta($agency_id, '_twf_agencias_latitud', true);
                 $longitud = get_post_meta($agency_id, '_twf_agencias_longitud', true);
+                
+                // Usa dirección personalizada si existe
+                $display_address = !empty($direccion_mostrar) ? $direccion_mostrar : $direccion;
                 
                 // Icono personalizado
                 $custom_icon_id = get_post_meta($agency_id, '_twf_agencias_custom_icon', true);
@@ -358,7 +394,7 @@ class TWF_Agencias_Public {
                 }
                 
                 // Generar contenido del tooltip
-                $tooltip_content = $this->generate_tooltip_content($agency_id, $agency_title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule);
+                $tooltip_content = $this->generate_tooltip_content($agency_id, $agency_title, $display_address, $telefono, $celular, $anexo, $email, $services, $schedule);
                 
                 // Añadir a la lista de agencias
                 $agencies[] = array(
@@ -366,7 +402,7 @@ class TWF_Agencias_Public {
                     'title'      => $agency_title,
                     'featured_image' => $featured_image,
                     'terms'      => $terms,
-                    'direccion'  => $direccion,
+                    'direccion'  => $display_address,
                     'latitud'    => $latitud,
                     'longitud'   => $longitud,
                     'icon'       => $custom_icon_url,
@@ -375,6 +411,7 @@ class TWF_Agencias_Public {
                         'latitud'    => $latitud,
                         'longitud'   => $longitud,
                         'direccion'  => $direccion,
+                        'direccion_mostrar' => $direccion_mostrar,
                         'telefono'   => $telefono,
                         'celular'    => $celular,
                         'anexo'      => $anexo,
@@ -440,19 +477,16 @@ class TWF_Agencias_Public {
         if (!empty($filters['search'])) {
             $search_term = sanitize_text_field($filters['search']);
             
-            // Primero buscar por título (nombre)
+            // Buscar por título de la agencia
             $args['s'] = $search_term;
-            
-            // Después buscaremos por dirección en el procesamiento
         }
+        
+        // Preparar filtros de taxonomía
+        $tax_query = array();
         
         // Filtrar por ciudad
         if (!empty($filters['city'])) {
-            if (empty($args['tax_query'])) {
-                $args['tax_query'] = array('relation' => 'AND');
-            }
-            
-            $args['tax_query'][] = array(
+            $tax_query[] = array(
                 'taxonomy' => 'ubicacion',
                 'field'    => 'slug',
                 'terms'    => $filters['city'],
@@ -461,15 +495,19 @@ class TWF_Agencias_Public {
         
         // Filtrar por distrito
         if (!empty($filters['district'])) {
-            if (empty($args['tax_query'])) {
-                $args['tax_query'] = array('relation' => 'AND');
-            }
-            
-            $args['tax_query'][] = array(
+            $tax_query[] = array(
                 'taxonomy' => 'ubicacion',
                 'field'    => 'slug',
                 'terms'    => $filters['district'],
             );
+        }
+        
+        // Añadir tax_query si hay filtros
+        if (!empty($tax_query)) {
+            if (count($tax_query) > 1) {
+                $tax_query['relation'] = 'AND';
+            }
+            $args['tax_query'] = $tax_query;
         }
         
         // Ejecutar la consulta
@@ -487,8 +525,15 @@ class TWF_Agencias_Public {
                 $agency_id = get_the_ID();
                 $agency_title = get_the_title();
                 
+                // Imagen destacada
+                $featured_image = '';
+                if (has_post_thumbnail($agency_id)) {
+                    $featured_image = get_the_post_thumbnail_url($agency_id, 'large');
+                }
+                
                 // Metadatos
                 $direccion = get_post_meta($agency_id, '_twf_agencias_direccion', true);
+                $direccion_mostrar = get_post_meta($agency_id, '_twf_agencias_direccion_mostrar', true);
                 $telefono = get_post_meta($agency_id, '_twf_agencias_telefono', true);
                 $celular = get_post_meta($agency_id, '_twf_agencias_celular', true);
                 $anexo = get_post_meta($agency_id, '_twf_agencias_anexo', true);
@@ -498,11 +543,18 @@ class TWF_Agencias_Public {
                 $latitud = get_post_meta($agency_id, '_twf_agencias_latitud', true);
                 $longitud = get_post_meta($agency_id, '_twf_agencias_longitud', true);
                 
-                // Si estamos buscando por dirección también y no hay coincidencia en el título
+                // Usa dirección personalizada si existe
+                $display_address = !empty($direccion_mostrar) ? $direccion_mostrar : $direccion;
+                
+                // Si estamos buscando por dirección y no se encontró en el título
                 if ($search_by_address && empty($args['s']) && !empty($search_term_lower)) {
-                    // Si la dirección no contiene el término de búsqueda, saltar esta agencia
-                    if (strpos(strtolower($direccion), $search_term_lower) === false) {
-                        continue;
+                    // Buscar en la dirección personalizada primero, luego en la dirección automática
+                    $display_address_lower = strtolower($display_address);
+                    $direccion_lower = strtolower($direccion);
+                    
+                    if (strpos($display_address_lower, $search_term_lower) === false && 
+                        strpos($direccion_lower, $search_term_lower) === false) {
+                        continue; // Saltar esta agencia si no hay coincidencia
                     }
                 }
                 
@@ -519,22 +571,50 @@ class TWF_Agencias_Public {
                     }
                 }
                 
+                // Términos de taxonomía
+                $terms = array();
+                $taxonomies = array('ubicacion');
+                
+                foreach ($taxonomies as $taxonomy) {
+                    $post_terms = get_the_terms($agency_id, $taxonomy);
+                    if (!empty($post_terms) && !is_wp_error($post_terms)) {
+                        $terms[$taxonomy] = array();
+                        foreach ($post_terms as $term) {
+                            $terms[$taxonomy][] = array(
+                                'id' => $term->term_id,
+                                'name' => $term->name,
+                                'slug' => $term->slug,
+                                'parent' => $term->parent
+                            );
+                        }
+                    }
+                }
+                
                 // Generar contenido del tooltip
-                $tooltip_content = $this->generate_tooltip_content($agency_id, $agency_title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule);
+                $tooltip_content = $this->generate_tooltip_content($agency_id, $agency_title, $display_address, $telefono, $celular, $anexo, $email, $services, $schedule);
                 
                 // Añadir a la lista de agencias
                 $agencies[] = array(
                     'id'         => $agency_id,
                     'title'      => $agency_title,
-                    'direccion'  => $direccion,
+                    'featured_image' => $featured_image,
+                    'terms'      => $terms,
+                    'direccion'  => $display_address,
                     'latitud'    => $latitud,
                     'longitud'   => $longitud,
                     'icon'       => $custom_icon_url,
                     'infoWindow' => $tooltip_content,
                     'meta_datos' => array(
-                        'latitud'  => $latitud,
-                        'longitud' => $longitud,
-                        'direccion' => $direccion,
+                        'latitud'    => $latitud,
+                        'longitud'   => $longitud,
+                        'direccion'  => $direccion,
+                        'direccion_mostrar' => $direccion_mostrar,
+                        'telefono'   => $telefono,
+                        'celular'    => $celular,
+                        'anexo'      => $anexo,
+                        'email'      => $email,
+                        'services'   => $services,
+                        'schedule'   => $schedule,
                         'custom_icon' => $custom_icon_url
                     )
                 );
@@ -551,6 +631,14 @@ class TWF_Agencias_Public {
      * Genera el contenido HTML del tooltip
      */
     private function generate_tooltip_content($agency_id, $title, $direccion, $telefono, $celular, $anexo, $email, $services, $schedule) {
+        
+        $direccion_mostrar = get_post_meta($agency_id, '_twf_agencias_direccion_mostrar', true);
+    
+        // Si no hay dirección personalizada, usar la dirección automática
+        if (empty($direccion_mostrar)) {
+            $direccion_mostrar = $direccion;
+        }
+
         // Obtener configuración de campos a mostrar
         $tooltip_fields = get_option('twf_agencias_tooltip_fields', array());
         
@@ -576,11 +664,11 @@ class TWF_Agencias_Public {
             $content .= '<h3 class="twf-agencias-tooltip-title">' . esc_html($title) . '</h3>';
         }
         
-        // Dirección
-        if ($tooltip_fields['address'] && !empty($direccion)) {
-            $content .= '<div class="twf-agencias-tooltip-address">' . esc_html($direccion) . '</div>';
+        // Dirección (ahora usando la dirección personalizada si existe)
+        if ($tooltip_fields['address'] && !empty($direccion_mostrar)) {
+            $content .= '<div class="twf-agencias-tooltip-address">' . esc_html($direccion_mostrar) . '</div>';
         }
-        
+            
         // Información de contacto
         $has_contact = ($tooltip_fields['phone'] && !empty($telefono)) || 
                     ($tooltip_fields['mobile'] && !empty($celular)) || 

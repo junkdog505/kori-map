@@ -5,7 +5,7 @@
  * Plugin para gestionar agencias con ubicaciones y servicios, incluyendo integración con Google Maps
  *
  * Plugin Name: TWF - Plugin para Agencias
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Cristian Amezquita
  */
 
@@ -15,7 +15,7 @@ if (!defined('WPINC')) {
 }
 
 // Definir constantes del plugin
-define('TWF_AGENCIAS_VERSION', '1.0.0');
+define('TWF_AGENCIAS_VERSION', '1.0.1');
 define('TWF_AGENCIAS_PLUGIN_NAME', 'twf-agencias');
 define('TWF_AGENCIAS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TWF_AGENCIAS_PLUGIN_URL', plugin_dir_url(__FILE__));

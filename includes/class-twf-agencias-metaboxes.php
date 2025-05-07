@@ -68,6 +68,7 @@ class TWF_Agencias_Metaboxes {
         $email = get_post_meta($post->ID, '_twf_agencias_email', true);
         $latitud = get_post_meta($post->ID, '_twf_agencias_latitud', true);
         $longitud = get_post_meta($post->ID, '_twf_agencias_longitud', true);
+        $direccion_mostrar = get_post_meta($post->ID, '_twf_agencias_direccion_mostrar', true);
         
         // Obtener la API key
         $api_key = get_option('twf_agencias_google_maps_api_key', '');
@@ -80,11 +81,13 @@ class TWF_Agencias_Metaboxes {
                     <label for="twf_agencias_celular">Celular:</label>
                     <input type="text" id="twf_agencias_celular" name="twf_agencias_celular" 
                         value="<?php echo esc_attr($celular); ?>" class="widefat">
+                    <p class="description">Número de celular de contacto de la agencia. Formato recomendado: +51 999 999 999</p>
                 </div>
                 <div class="twf-agencias-contact-column">
                     <label for="twf_agencias_telefono">Teléfono:</label>
                     <input type="text" id="twf_agencias_telefono" name="twf_agencias_telefono" 
                         value="<?php echo esc_attr($telefono); ?>" class="widefat">
+                    <p class="description">Número de teléfono fijo de la agencia. Formato recomendado: (01) 999-9999</p>
                 </div>
             </div>
             
@@ -93,13 +96,23 @@ class TWF_Agencias_Metaboxes {
                     <label for="twf_agencias_anexo">Anexo:</label>
                     <input type="text" id="twf_agencias_anexo" name="twf_agencias_anexo" 
                         value="<?php echo esc_attr($anexo); ?>" class="widefat">
+                    <p class="description">Número de anexo telefónico, si aplica. Ejemplo: 123</p>
                 </div>
                 <div class="twf-agencias-contact-column">
                     <label for="twf_agencias_email">Correo Electrónico:</label>
                     <input type="email" id="twf_agencias_email" name="twf_agencias_email" 
                         value="<?php echo esc_attr($email); ?>" class="widefat">
+                    <p class="description">Correo electrónico de contacto de la agencia. Ejemplo: contacto@agencia.com</p>
                 </div>
             </div>
+        </div>
+        
+        <!-- Campo de dirección a mostrar - Justo antes de "Ubicación en el Mapa" -->
+        <div style="margin-top: 15px; margin-bottom: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+            <label for="twf_agencias_direccion_mostrar" style="display: block; margin-bottom: 8px; font-weight: 600;">Dirección a mostrar en el Pin del mapa:</label>
+            <input type="text" id="twf_agencias_direccion_mostrar" name="twf_agencias_direccion_mostrar" 
+                value="<?php echo esc_attr($direccion_mostrar); ?>" class="widefat">
+            <p class="description">Ingrese la dirección exacta que desea mostrar en el tooltip del pin del mapa y en las tarjetas. Esta dirección no afecta la ubicación del pin, solo es el texto que se mostrará al cliente.</p>
         </div>
         
         <div class="twf-agencias-location-fields" style="margin-top: 15px;">
@@ -473,6 +486,10 @@ class TWF_Agencias_Metaboxes {
             
             if (isset($_POST['twf_agencias_direccion'])) {
                 update_post_meta($post_id, '_twf_agencias_direccion', sanitize_text_field($_POST['twf_agencias_direccion']));
+            }
+
+            if (isset($_POST['twf_agencias_direccion_mostrar'])) {
+                update_post_meta($post_id, '_twf_agencias_direccion_mostrar', sanitize_text_field($_POST['twf_agencias_direccion_mostrar']));
             }
             
             // Guardar coordenadas

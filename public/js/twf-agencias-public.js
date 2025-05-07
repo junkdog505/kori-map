@@ -632,13 +632,26 @@
         var page = parseInt($cardsContainer.attr('data-page')) || 1;
         var itemsPerPage = parseInt($cardsContainer.attr('data-items-per-page')) || 4;
         
-        // Filtros iniciales
-        var filters = customFilters || {
-            ubicacion: $cardsContainer.data('ubicacion') || '',
-            servicios: $cardsContainer.data('servicios') || '',
-            page: page,
-            items_per_page: itemsPerPage
-        };
+        // Obtener filtros actuales - usar los filtros de búsqueda si existen
+        var currentFilters = {};
+        
+        // Si hay filtros personalizados (desde los controles de filtro), usarlos
+        if (customFilters) {
+            currentFilters = customFilters;
+        } 
+        // Si no hay filtros personalizados, usar los filtros del contenedor
+        else {
+            currentFilters = {
+                ubicacion: $cardsContainer.data('ubicacion') || '',
+                servicios: $cardsContainer.data('servicios') || '',
+                page: page,
+                items_per_page: itemsPerPage
+            };
+        }
+        
+        // Asegurarse de que page e items_per_page siempre estén incluidos
+        currentFilters.page = page;
+        currentFilters.items_per_page = itemsPerPage;
         
         // Hacer la solicitud AJAX
         $.ajax({
@@ -647,7 +660,7 @@
             data: {
                 action: 'twf_agencias_get_agencies',
                 nonce: twf_agencias_vars.nonce,
-                filters: filters
+                filters: currentFilters
             },
             beforeSend: function() {
                 $cardsContainer.addClass('loading');
@@ -677,16 +690,13 @@
         var $cardsGrid = $cardsContainer.find('.twf-agencias-cards-grid');
         var $pagination = $cardsContainer.find('.twf-agencias-pagination');
         
-        // Forzar items_per_page a 4 (1 elemento por fila, 4 filas)
-        itemsPerPage = 4;
-        
         // Limpiar contenedores
         $cardsGrid.empty();
         $pagination.empty();
         
         // Si no hay agencias, mostrar mensaje
         if (!agencies || agencies.length === 0) {
-            $cardsGrid.html('<div class="twf-agencias-no-results">No se encontraron agencias.</div>');
+            $cardsGrid.html('<div class="twf-agencias-no-results">No se encontraron agencias con los filtros seleccionados.</div>');
             return;
         }
         
@@ -710,8 +720,10 @@
             $cardsGrid.append(card);
         });
         
-        // Crear la paginación
-        createPagination(page, totalPages, $pagination);
+        // Crear la paginación si hay más de una página
+        if (totalPages > 1) {
+            createPagination(page, totalPages, $pagination);
+        }
     }
 
     /**
@@ -756,17 +768,18 @@
         var anexo = '';
         var email = '';
         var services = [];
-
-        console.log('Servicios para agencia ' + agency.id + ':', services);
-
         
         if (agency.meta_datos) {
-            address = agency.meta_datos.direccion || '';
+            // Priorizar la dirección personalizada
+            address = agency.meta_datos.direccion_mostrar || agency.meta_datos.direccion || '';
             phone = agency.meta_datos.telefono || '';
             anexo = agency.meta_datos.anexo || '';
             email = agency.meta_datos.email || '';
             services = agency.meta_datos.services || [];
         }
+        
+        // Para el botón "Cómo llegar", usamos la dirección personalizada para la URL
+        var mapUrl = 'https://maps.google.com/?q=' + encodeURIComponent(address);
         
         var servicesHtml = '';
         if (services && services.length > 0) {
@@ -809,7 +822,7 @@
         html += '</div>';
         html += '</div>';
         html += servicesHtml;
-        html += '<a href="https://maps.google.com/?q=' + address + '" target="_blank" class="twf-agencias-card-button">Cómo llegar</a>';
+        html += '<a href="' + mapUrl + '" target="_blank" class="twf-agencias-card-button">Cómo llegar</a>';
         html += '</div>';
         html += '</div>';
         
@@ -852,6 +865,10 @@
      * Dispara un evento personalizado cuando se filtran las agencias
      */
     function triggerFilteredEvent(filters) {
+        // Guardar los filtros actuales para uso futuro
+        currentFilters = filters;
+        
+        // Disparar evento con los filtros
         $(document).trigger('twf_agencias_filtered', {
             filters: filters
         });
@@ -865,7 +882,8 @@
         var filters = {
             city: citySlug
         };
-
+        
+        // Disparar evento para que las tarjetas se actualicen
         triggerFilteredEvent(filters);
         
         // Hacer la solicitud AJAX
@@ -882,7 +900,7 @@
                     if (response.data && response.data.length > 0) {
                         displayAgencies(response.data);
                         
-                        // Añadir un pequeño padding al bounds para mejorar visualización
+                        // Ajustar el mapa para mostrar todos los pines
                         if (map && markers.length > 0) {
                             setTimeout(function() {
                                 var bounds = new google.maps.LatLngBounds();
@@ -892,8 +910,7 @@
                                 
                                 map.fitBounds(bounds);
                                 
-                                // Si solo hay un marcador o están muy juntos, 
-                                // ajusta el zoom para ver mejor el contexto
+                                // Ajustar zoom
                                 var listener = google.maps.event.addListenerOnce(map, 'bounds_changed', function() {
                                     if (map.getZoom() > 16) {
                                         map.setZoom(16);
@@ -922,7 +939,8 @@
         var filters = {
             district: districtSlug
         };
-
+        
+        // Disparar evento para que las tarjetas se actualicen
         triggerFilteredEvent(filters);
         
         // Hacer la solicitud AJAX
@@ -949,8 +967,7 @@
                                 
                                 map.fitBounds(bounds);
                                 
-                                // Si solo hay un marcador o están muy juntos,
-                                // ajusta el zoom para ver mejor el contexto
+                                // Ajustar zoom
                                 var listener = google.maps.event.addListenerOnce(map, 'bounds_changed', function() {
                                     if (map.getZoom() > 16) {
                                         map.setZoom(16);
@@ -985,14 +1002,13 @@
             return;
         }
         
-        
         var filters = {
             search: searchTerm,
             city: $('#twf-agencias-city-select').val(),
             district: $('#twf-agencias-district-select').val()
         };
         
-        // Disparar evento de filtrado
+        // Disparar evento de filtrado para actualizar tarjetas
         triggerFilteredEvent(filters);
 
         // Hacer la solicitud AJAX
@@ -1008,6 +1024,25 @@
                 if (response.success) {
                     if (response.data && response.data.length > 0) {
                         displayAgencies(response.data);
+                        
+                        // Si solo hay una agencia, centrar el mapa en ella
+                        if (response.data.length === 1 && map) {
+                            var agency = response.data[0];
+                            var lat = parseFloat(agency.latitud);
+                            var lng = parseFloat(agency.longitud);
+                            
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                var position = new google.maps.LatLng(lat, lng);
+                                map.setCenter(position);
+                                map.setZoom(16);
+                                
+                                // Abrir infoWindow para la agencia encontrada
+                                if (markers.length > 0) {
+                                    infoWindow.setContent(agency.infoWindow);
+                                    infoWindow.open(map, markers[0]);
+                                }
+                            }
+                        }
                     } else {
                         showNotification('No se encontraron agencias que coincidan con la búsqueda.', 3000);
                     }

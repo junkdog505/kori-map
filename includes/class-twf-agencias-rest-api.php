@@ -39,6 +39,7 @@ class TWF_Agencias_REST_API {
         // Obtener metadatos
         $meta_datos = array(
             'direccion' => get_post_meta($post_id, '_twf_agencias_direccion', true),
+            'direccion_mostrar' => get_post_meta($post_id, '_twf_agencias_direccion_mostrar', true),
             'telefono' => get_post_meta($post_id, '_twf_agencias_telefono', true),
             'celular' => get_post_meta($post_id, '_twf_agencias_celular', true),
             'anexo' => get_post_meta($post_id, '_twf_agencias_anexo', true),
