@@ -40,37 +40,34 @@
     flex: 1;
     height: 46px;
     padding: 8px 50px 8px 15px;
-    border: 1px solid #D9D9D9;
-    border-radius: 4px;
+    border: 1px solid #D9D9D9 !important;
+    border-radius: 10px 0 0 10px;
     font-size: 16px;
     width: 100%;
-    box-shadow: none;
     outline: none;
     font-family: 'Montserrat', sans-serif;
     color: #A1A1A1;
 }
 
 .twf-agencias-search-input:focus {
-    border-color: #157BCE;
-    box-shadow: 0 0 0 0.1rem rgba(21, 123, 206, 0.25);
+    border-color: #D9D9D9 !important;
 }
 
 .twf-agencias-search-button {
-    position: absolute;
     right: 0;
     top: 0;
-    height: 46px;
-    width: 46px;
-    background-color: #157BCE;
+    height: 46px !important;
+    width: 50px !important;
+    background-color: #157BCE !important;
     color: white;
     border: none;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 10px 10px 0;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: background-color 0.2s;
-    outline: none;
+    outline: none !important;
 }
 
 .twf-agencias-search-button:hover {
@@ -98,7 +95,7 @@
     height: 46px;
     padding: 8px 15px;
     border: 1px solid #D9D9D9;
-    border-radius: 4px;
+    border-radius: 10px;
     font-size: 16px;
     background-color: #fff;
     appearance: none;
@@ -110,30 +107,54 @@
     outline: none;
     font-family: 'Montserrat', sans-serif;
     color: #A1A1A1;
+    margin-bottom: 8px;
 }
 
 .twf-agencias-city-select:focus,
 .twf-agencias-district-select:focus {
-    border-color: #157BCE;
-    box-shadow: 0 0 0 0.1rem rgba(21, 123, 206, 0.25);
+    border-color: #D9D9D9;
 }
 
 /* Estilo para la lista desplegada */
-.twf-agencias-filter-column select option {
+.twf-agencias-city-select option,
+.twf-agencias-district-select option {
     color: #A1A1A1;
     background-color: #fff;
-    padding: 10px;
+    padding: 15px !important;
+    font-family: 'Montserrat', sans-serif;
 }
 
-/* Simulación del espacio entre el select y la lista desplegable */
-.twf-agencias-filter-column::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    height: 5px;
-    pointer-events: none;
+.twf-agencias-city-select option:hover,
+.twf-agencias-district-select option:hover {
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+}
+
+.twf-agencias-city-select option:checked,
+.twf-agencias-district-select option:checked {
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+}
+
+/* Estilo para la opción seleccionada */
+.twf-agencias-city-select option:focus,
+.twf-agencias-district-select option:focus,
+.twf-agencias-city-select option:active,
+.twf-agencias-district-select option:active {
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+}
+
+/* Espacio entre select y dropdown */
+select.twf-agencias-city-select,
+select.twf-agencias-district-select {
+    margin-bottom: 8px;
+}
+
+/* Eliminar la línea inferior en el input al hacer clic */
+.twf-agencias-search-input:focus {
+    border: 1px solid #D9D9D9 !important;
+    outline: none !important;
 }
 
 .twf-agencias-map {
@@ -282,24 +303,27 @@
 
 .twf-agencias-suggestions {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     left: 0;
     width: 100%;
     max-height: 200px;
     overflow-y: auto;
     background-color: white;
     border: 1px solid #D9D9D9;
-    border-top: none;
-    border-radius: 0 0 4px 4px;
+    border-radius: 10px;
     z-index: 1000;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    display: none;
-    margin-top: 5px;
+    margin-top: 0;
     font-family: 'Montserrat', sans-serif;
+    display: none;
+}
+
+.twf-agencias-suggestions.active {
+    display: block;
 }
 
 .twf-agencias-suggestion-item {
-    padding: 10px 15px;
+    padding: 15px;
     cursor: pointer;
     transition: background-color 0.2s;
     color: #A1A1A1;
@@ -307,6 +331,7 @@
 
 .twf-agencias-suggestion-item:hover {
     background-color: #f0f0f0;
+    color: #333;
 }
 
 .twf-agencias-marker-active {
@@ -430,6 +455,9 @@
     list-style: none;
     padding: 0;
     margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 20px;
 }
 
 .twf-agencias-card-services-item {
@@ -491,22 +519,24 @@
 }
 
 .twf-agencias-card-button {
-    display: inline-block;
-    padding: 12px 24px;
-    background-color: #157BCE;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 15px;
-    margin-top: 20px;
-    text-align: center;
-    transition: background-color 0.3s ease;
+    display: inline-block !important;
+    padding: 12px 60px !important;
+    background-color: #00C9DB !important;
+    color: #fff !important;
+    text-decoration: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    margin-top: 20px !important;
+    text-align: center !important;
+    transition: background-color 0.3s ease !important;
+    border: none !important;
 }
 
 .twf-agencias-card-button:hover {
-    background-color: #1069b2;
-    color: #fff;
+    background-color: #00b0c1 !important;
+    color: #fff !important;
+    text-decoration: none !important;
 }
 
 .twf-agencias-pagination {
@@ -567,6 +597,10 @@
 @media (max-width: 991px) {
     .twf-agencias-card {
         padding: 30px 40px;
+    }
+    
+    .twf-agencias-card-services-list {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -645,4 +679,34 @@ a:focus {
 .twf-agencias-map *:focus {
     outline: none !important;
     box-shadow: none !important;
+}
+
+.twf-agencias-search-button,
+.twf-agencias-search-button[type="button"] {
+    display: flex !important;
+    font-weight: 400 !important;
+    color: white !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    background-color: #157BCE !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: 1rem !important;
+    border-radius: 0 10px 10px 0 !important;
+    transition: all .3s !important;
+    width: 50px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+}
+
+.twf-agencias-search-button:hover,
+.twf-agencias-search-button[type="button"]:hover {
+    background-color: #0e5a9e !important;
+    color: white !important;
+}
+
+.twf-agencias-filters input[type=text], 
+.twf-agencias-search-input {
+    border-radius: 10px 0 0 10px !important;
 }
